@@ -1,0 +1,31 @@
+version: '3.1'
+
+services:
+
+  wordpress:
+    image: wordpress
+    restart: always
+    ports:
+      - 8091:80
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: pi
+      WORDPRESS_DB_PASSWORD: Dm4sxfm5?@!
+      WORDPRESS_DB_NAME: wordpressdb1
+    volumes:
+      - /Desktop/WordPress/Mia_Blog:/var/www/html
+
+  db:
+    image: yobasystems/alpine-mariadb:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpressdb1
+      MYSQL_USER: pi
+      MYSQL_PASSWORD: Dm4sxfm5?@!
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      - /Desktop/WordPress/Mia_Blog:/var/lib/mysql
+
+volumes:
+  wordpress:
+  db:
