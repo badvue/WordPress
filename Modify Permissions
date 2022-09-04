@@ -1,2 +1,0 @@
- sudo chown -R www-data:www-data wp-content/
- sudo chmod 775 wp-content
