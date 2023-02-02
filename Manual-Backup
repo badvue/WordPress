@@ -1,1 +1,1 @@
-zip -r WordPress-Backup-XXXXXX.zip /Desktop/WordPress/wordpress/
+sudo zip -r WordPress-Backup-XXXXXX.zip /Desktop/WordPress/wordpress/
