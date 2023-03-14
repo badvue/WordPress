@@ -4,3 +4,5 @@
 SOURCEDIR=/Desktop/
 sudo chown -R www-data:www-data WordPress/ $SOURCEDIR
 sudo chmod 775 WordPress/ $SOURCEDIR
+
+# Make Script Executable using "sudo chmod +x WordPress.sh"
