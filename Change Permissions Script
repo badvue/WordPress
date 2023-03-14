@@ -1,0 +1,6 @@
+#!/bin/bash
+# This script is to be used with Docker Compose to automatically change WordPress permissions after the services have started
+
+SOURCEDIR=/Desktop/
+sudo chown -R www-data:www-data WordPress/ $SOURCEDIR
+sudo chmod 775 WordPress/ $SOURCEDIR
