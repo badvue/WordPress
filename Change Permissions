@@ -1,3 +1,0 @@
-cd /Desktop/
-sudo chown -R www-data:www-data WordPress/
-sudo chmod 775 WordPress/
