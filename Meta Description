@@ -1,0 +1,21 @@
+# See the instructions for WordPress Meta Descriptions at
+# https://orbitingweb.com/blog/wordpress-meta-descriptions/
+# Open your theme's functions.php page and add the following code to it:
+/*Display custom meta description or the post excerpt */
+function add_custom_meta_des(){
+
+#Homepage Meta Description
+if( is_home() || is_front_page() ){
+	$meta_des = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget."; #Edit here
+	echo '<meta name="description" content="' . $meta_des . '" />';
+}
+
+#Single Page Meta Description
+if( is_single() || ( is_page() )  ){
+	$des = get_post_meta( get_the_id(), 'description', true);
+	if( ! empty( $des )  ){
+		$meta_des = esc_html($des);
+		echo '<meta name="description" content="' . $meta_des . '" />';
+	}
+}}
+add_action( 'wp_head', 'add_custom_meta_des', 4 );
