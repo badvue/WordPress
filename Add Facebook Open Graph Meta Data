@@ -1,14 +1,18 @@
 # This code adds Open Graph data to your webpages (images, image height and width, descriptions, names, locale, etc...)
 # Use WPCode to add this code as a PHP Snippet or manually via functions.php
 
-// Function to insert Open Graph meta tags
-function insert_fb_in_head() {
+// Function to insert Open Graph and Twitter Card meta tags
+function insert_social_meta_tags() {
     if ( is_home() || ( is_front_page() && ! is_singular() ) ) { // Check if it's the homepage or front page and not a singular post/page
-        // Common Open Graph tags
+        // Common Open Graph and Twitter Card tags for the homepage
         echo '<meta property="og:title" content="' . get_bloginfo( 'name' ) . '"/>';
         echo '<meta property="og:type" content="website"/>';
         echo '<meta property="og:url" content="' . esc_url( home_url( '/' ) ) . '"/>';
         echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
+
+        // Description for the homepage
+        $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+        echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
 
         // Default image for the homepage
         $default_image = "https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp";
@@ -18,24 +22,29 @@ function insert_fb_in_head() {
             $image_meta = $image_data->get_size();
             // Output og:image tag and its dimensions
             echo '<meta property="og:image" content="' . esc_attr( $default_image ) . '"/>';
-            if ( isset( $image_meta['width'] ) && isset( $image_meta['height'] ) ) {
-                echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-                echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-            }
+            echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
+            echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
         }
-        
-        // Description for the homepage
-        $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
-        echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
 
+        // Twitter Card tags for the homepage
+        echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
+        echo '<meta name="twitter:title" content="' . get_bloginfo( 'name' ) . '"/>';
+        echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>'; // Use the same description for Twitter
+        echo '<meta name="twitter:image" content="' . esc_attr( $default_image ) . '"/>'; // Twitter Card image
     } elseif ( is_singular() ) { // Singular post/page
         global $post;
 
-        // Common Open Graph tags
+        // Common Open Graph tags for singular posts/pages
         echo '<meta property="og:title" content="' . get_the_title() . '"/>';
         echo '<meta property="og:type" content="article"/>';
         echo '<meta property="og:url" content="' . get_permalink() . '"/>';
         echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
+
+        // Description
+        $og_description = get_post_meta( $post->ID, 'description', true ) ?: get_the_excerpt();
+        if ( ! empty( $og_description ) ) {
+            echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
+        }
 
         // Featured image and its dimensions
         if ( has_post_thumbnail( $post->ID ) ) {
@@ -59,20 +68,27 @@ function insert_fb_in_head() {
                 $image_meta = $image_data->get_size();
                 // Output og:image tag and its dimensions
                 echo '<meta property="og:image" content="' . esc_attr( $default_image ) . '"/>';
-                if ( isset( $image_meta['width'] ) && isset( $image_meta['height'] ) ) {
-                    echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-                    echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-                }
+                echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
+                echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
             }
         }
-        
+
+        // Twitter Card tags for singular posts/pages
+        echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
+        echo '<meta name="twitter:title" content="' . get_the_title() . '"/>';
+
         // Description
-        $og_description = get_post_meta( $post->ID, 'description', true );
-        if ( empty( $og_description ) ) {
-            $og_description = get_the_excerpt();
-        }
         if ( ! empty( $og_description ) ) {
-            echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
+            echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>';
+        }
+
+        // Featured image
+        if ( has_post_thumbnail( $post->ID ) ) {
+            $thumbnail_id = get_post_thumbnail_id( $post->ID );
+            $thumbnail_src = wp_get_attachment_image_src( $thumbnail_id, 'full' );
+            if ( isset( $thumbnail_src[0] ) ) {
+                echo '<meta name="twitter:image" content="' . esc_attr( $thumbnail_src[0] ) . '"/>';
+            }
         }
     }
 
@@ -81,4 +97,5 @@ function insert_fb_in_head() {
 
     echo "\n";
 }
-add_action( 'wp_head', 'insert_fb_in_head', 5 );
+
+add_action( 'wp_head', 'insert_social_meta_tags', 5 );
