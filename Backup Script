@@ -6,7 +6,7 @@
 SOURCE_DIR="/Desktop/WordPress/Travel/"
 
 # Destination directory
-DEST_DIR="/path/to/backup/directory/"
+DEST_DIR="/home/dev/WithEachMile-Backups"
 
 # Create backup directory if it doesn't exist
 mkdir -p "$DEST_DIR"
