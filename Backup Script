@@ -1,0 +1,29 @@
+// Script to Create WordPress Backups
+
+#!/bin/bash
+
+# Directory to backup
+SOURCE_DIR="/Desktop/WordPress/Travel/"
+
+# Destination directory
+DEST_DIR="/path/to/backup/directory/"
+
+# Create backup directory if it doesn't exist
+mkdir -p "$DEST_DIR"
+
+# Get current date and time
+DATE=$(date +"%m-%d-%Y")
+TIME=$(date +"%I-%M%p")
+
+# Backup file name format
+BACKUP_NAME="WithEachMile-Backup-$DATE-$TIME.zip"
+
+# Create zip archive of the source directory
+zip -r "$DEST_DIR/$BACKUP_NAME" "$SOURCE_DIR" > /dev/null
+
+# Check if backup was successful
+if [ $? -eq 0 ]; then
+    echo "Backup successful! File saved as: $BACKUP_NAME"
+else
+    echo "Backup failed."
+fi
