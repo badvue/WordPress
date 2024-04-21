@@ -14,23 +14,23 @@ function insert_social_meta_tags() {
         $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
         echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
 
-        // Default image for the homepage
+        // Default image for Open Graph and Twitter Cards
         $default_image = "https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp";
         // Get dimensions of the default image
         $image_data = wp_get_image_editor( $default_image );
         if ( ! is_wp_error( $image_data ) ) {
             $image_meta = $image_data->get_size();
-            // Output og:image tag and its dimensions
+            // Output og:image and twitter:image tags and their dimensions
             echo '<meta property="og:image" content="' . esc_attr( $default_image ) . '"/>';
             echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
             echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
+            echo '<meta name="twitter:image" content="' . esc_attr( $default_image ) . '"/>';
         }
 
         // Twitter Card tags for the homepage
         echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
         echo '<meta name="twitter:title" content="' . get_bloginfo( 'name' ) . '"/>';
         echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>'; // Use the same description for Twitter
-        echo '<meta name="twitter:image" content="' . esc_attr( $default_image ) . '"/>'; // Twitter Card image
     } elseif ( is_singular() ) { // Singular post/page
         global $post;
 
@@ -70,6 +70,7 @@ function insert_social_meta_tags() {
                 echo '<meta property="og:image" content="' . esc_attr( $default_image ) . '"/>';
                 echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
                 echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
+                echo '<meta name="twitter:image" content="' . esc_attr( $default_image ) . '"/>';
             }
         }
 
