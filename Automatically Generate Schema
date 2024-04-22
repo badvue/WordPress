@@ -1,4 +1,8 @@
-// This code is to be inserted into the functions.php or using WPCode. It will read through the page and add items necessary to generate the schema for WordPress.
+// This is a plugin-free method to add Schema JSON-LD code automatically to the ending of your article head. This php script generates a Schema automatically for your WordPress posts and inserts it at the end of the head in the JSON-LD format.
+
+// It pulls information from your post such as the headline (title), author information (name and author URL), date published (year, month, day and time), the post URL, article sections (inserted as articleSection only if they are marked using a h2 header. If no h2 headings are used, articleSection is omitted from the Schema), images (featured image as well as any other images you've inserted into the post), paragraph text (inserted as articleBody, but removing h2 header text). This script will also mark the post as an "article". 
+
+// This code can be inserted into the functions.php file or inserted using WPCode. Once the code is added, you do not need to generate a Schema manually.
 function generate_schema() {
     // Check if the current page is a post
     if (!is_single()) {
