@@ -15,7 +15,7 @@ function insert_social_meta_tags() {
         echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
 
         // Default image for Open Graph and Twitter Cards
-        $default_image = "https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp";
+        $default_image = "https://witheachmile.com/wp-content/uploads/2024/04/Rectangle-Logo-Full-Size.webp";
         // Get dimensions of the default image
         $image_data = wp_get_image_editor( $default_image );
         if ( ! is_wp_error( $image_data ) ) {
@@ -61,7 +61,7 @@ function insert_social_meta_tags() {
             }
         } else {
             // Default image for singular posts/pages without a featured image
-            $default_image = "https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp";
+            $default_image = "https://witheachmile.com/wp-content/uploads/2024/04/Rectangle-Logo-Full-Size.webp";
             // Get dimensions of the default image
             $image_data = wp_get_image_editor( $default_image );
             if ( ! is_wp_error( $image_data ) ) {
