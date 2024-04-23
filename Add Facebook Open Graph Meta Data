@@ -5,6 +5,7 @@
 // Function to insert Open Graph and Twitter Card meta tags
 function insert_social_meta_tags() {
     $default_image_url = "https://witheachmile.com/wp-content/uploads/2024/04/Rectangle-Logo-Full-Size.webp";
+    $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
 
     if ( is_home() || is_front_page() ) { // Check if it's the homepage or front page
         // Common Open Graph and Twitter Card tags for the homepage
@@ -14,7 +15,6 @@ function insert_social_meta_tags() {
         echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
 
         // Description for the homepage
-        $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
         echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
 
         // Default image for Open Graph and Twitter Cards
@@ -42,9 +42,9 @@ function insert_social_meta_tags() {
         echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
 
         // Description
-        $og_description = get_post_meta( $post->ID, 'description', true ) ?: get_the_excerpt();
-        if ( ! empty( $og_description ) ) {
-            echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
+        $post_description = get_post_meta( $post->ID, 'description', true ) ?: get_the_excerpt();
+        if ( ! empty( $post_description ) ) {
+            echo '<meta property="og:description" content="' . esc_attr( $post_description ) . '"/>';
         }
 
         // Featured image and its dimensions
@@ -78,8 +78,8 @@ function insert_social_meta_tags() {
         echo '<meta name="twitter:title" content="' . get_the_title() . '"/>';
 
         // Description
-        if ( ! empty( $og_description ) ) {
-            echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>';
+        if ( ! empty( $post_description ) ) {
+            echo '<meta name="twitter:description" content="' . esc_attr( $post_description ) . '"/>';
         }
 
         // Featured image
