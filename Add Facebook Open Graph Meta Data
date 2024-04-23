@@ -1,5 +1,5 @@
-# This code adds Open Graph data to your webpages (images, image height and width, descriptions, names, locale, etc...)
-# Use WPCode to add this code as a PHP Snippet or manually via functions.php
+// This code adds Open Graph data to your webpages (images, image height and width, descriptions, names, locale, etc...)
+// Use WPCode to add this code as a PHP Snippet or manually via functions.php
 
 // Function to insert Open Graph and Twitter Card meta tags
 function insert_social_meta_tags() {
