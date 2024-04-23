@@ -92,9 +92,10 @@ function insert_social_meta_tags() {
         }
     } elseif ( is_author() || is_category() || is_tag() ) { // Author, category, or tag page
         // Common Open Graph and Twitter Card tags for author, category, and tag pages
-        echo '<meta property="og:title" content="' . single_term_title( '', false ) . '"/>';
+        $term = $GLOBALS['wp_query']->get_queried_object();
+        echo '<meta property="og:title" content="' . $term->name . '"/>';
         echo '<meta property="og:type" content="website"/>';
-        echo '<meta property="og:url" content="' . esc_url( get_term_link( $GLOBALS['wp_the_query']->get_queried_object() ) ) . '"/>';
+        echo '<meta property="og:url" content="' . esc_url( get_term_link( $term ) ) . '"/>';
         echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
 
         // Default image for Open Graph and Twitter Cards
@@ -110,7 +111,7 @@ function insert_social_meta_tags() {
 
         // Twitter Card tags for author, category, and tag pages
         echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
-        echo '<meta name="twitter:title" content="' . single_term_title( '', false ) . '"/>';
+        echo '<meta name="twitter:title" content="' . $term->name . '"/>';
         echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>'; // Use the same description for Twitter
     }
 
