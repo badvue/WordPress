@@ -1,4 +1,5 @@
 // Script to Create WordPress Backups
+// Use tar -xzf filename.tar.gz -C /path/to/extract to extract
 
 #!/bin/bash
 
@@ -16,10 +17,10 @@ DATE=$(date +"%m-%d-%Y")
 TIME=$(date +"%I-%M%p")
 
 # Backup file name format
-BACKUP_NAME="WithEachMile-Backup-$DATE-$TIME.zip"
+BACKUP_NAME="WithEachMile-Backup-$DATE-$TIME.tar.gz"
 
-# Create zip archive of the source directory
-zip -r "$DEST_DIR/$BACKUP_NAME" "$SOURCE_DIR" > /dev/null
+# Create tar archive of the source directory and compress with gzip
+tar -czf "$DEST_DIR/$BACKUP_NAME" "$SOURCE_DIR"
 
 # Check if backup was successful
 if [ $? -eq 0 ]; then
