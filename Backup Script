@@ -4,10 +4,10 @@
 #!/bin/bash
 
 # Directory to backup
-SOURCE_DIR="/directory"
+SOURCE_DIR="/Desktop/WordPress/Travel/"
 
 # Destination directory
-DEST_DIR="/directory"
+DEST_DIR="/WithEachMile-Backups"
 
 # Create backup directory if it doesn't exist
 mkdir -p "$DEST_DIR"
@@ -20,7 +20,7 @@ TIME=$(date +"%I-%M%p")
 BACKUP_NAME="WithEachMile-Backup-$DATE-$TIME.tar.gz"
 
 # Create tar archive of the source directory and compress with gzip
-tar -czf "$DEST_DIR/$BACKUP_NAME" "$SOURCE_DIR"
+tar -czf "$DEST_DIR/$BACKUP_NAME" -C "$(dirname "$SOURCE_DIR")" "$(basename "$SOURCE_DIR")"
 
 # Check if backup was successful
 if [ $? -eq 0 ]; then
