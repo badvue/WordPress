@@ -4,10 +4,10 @@
 #!/bin/bash
 
 # Directory to backup
-SOURCE_DIR="/Desktop/WordPress/Travel/"
+SOURCE_DIR="/path/to/file"
 
 # Destination directory
-DEST_DIR="/WithEachMile-Backups"
+DEST_DIR="/path/to/file"
 
 # Create backup directory if it doesn't exist
 mkdir -p "$DEST_DIR"
@@ -24,7 +24,7 @@ tar -czf "$DEST_DIR/$BACKUP_NAME" -C "$(dirname "$SOURCE_DIR")" "$(basename "$SO
 
 # Check if backup was successful
 if [ $? -eq 0 ]; then
-    echo "Backup successful! File saved as: $BACKUP_NAME"
+    echo "Backup successful! File saved as: $DEST_DIR/$BACKUP_NAME"
 else
     echo "Backup failed."
 fi
