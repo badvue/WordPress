@@ -1,1 +1,3 @@
 sudo zip -r WordPress-Backup-XXXXXX.zip /Desktop/WordPress/wordpress/
+
+sudo tar -cvzf -Backup-XXXXXXX.tar.gz /Desktop/WordPress/wordpress/
