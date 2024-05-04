@@ -13,6 +13,15 @@ function add_custom_meta_des() {
         if ( empty( $meta_des ) ) {
             $meta_des = get_the_excerpt();
         }
+    } elseif ( is_author() ) {
+        $author_name = get_the_author_meta( 'display_name' );
+        $meta_des = "With Each Mile | Author - " . $author_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+    } elseif ( is_category() ) {
+        $category_name = single_cat_title('', false);
+        $meta_des = "With Each Mile | Category - " . $category_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+    } elseif ( is_tag() ) {
+        $tag_name = single_tag_title('', false);
+        $meta_des = "With Each Mile | Tag - " . $tag_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
     }
 
     if ( ! empty( $meta_des ) ) {
