@@ -15,15 +15,15 @@ function add_custom_meta_des() {
         }
     } elseif ( is_author() ) {
         $author_name = get_the_author_meta( 'display_name' );
-        $meta_des = "With Each Mile | Author - " . $author_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+        $meta_des = "With Each Mile | Author - " . $author_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Author - ' . $author_name . '</h1>';
     } elseif ( is_category() ) {
         $category_name = single_cat_title('', false);
-        $meta_des = "With Each Mile | Category - " . $category_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+        $meta_des = "With Each Mile | Category - " . $category_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Category - ' . $category_name . '</h1>';
     } elseif ( is_tag() ) {
         $tag_name = single_tag_title('', false);
-        $meta_des = "With Each Mile | Tag - " . $tag_name . " | Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+        $meta_des = "With Each Mile | Tag - " . $tag_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Tag - ' . $tag_name . '</h1>';
     }
 
