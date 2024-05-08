@@ -1,0 +1,15 @@
+/* Customizing text selection for Firefox */
+::-moz-selection {
+    /* Background color when text is selected in Firefox */
+    background-color: #1C2930; /* Lighter Theme Color */
+    /* Text color when text is selected in Firefox */
+    color: #fff;
+}
+ 
+/* Customizing text selection for other browsers */
+::selection {
+    /* Background color when text is selected in other browsers */
+    background-color: #1C2930; /* Lighter Theme Color */
+    /* Text color when text is selected in other browsers */
+    color: #fff;
+}
