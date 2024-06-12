@@ -5,120 +5,83 @@
 // Function to insert Open Graph and Twitter Card meta tags
 function insert_social_meta_tags() {
     $default_image_url = "https://witheachmile.com/wp-content/uploads/2024/04/Rectangle-Logo-Full-Size.webp";
-    $og_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+    $default_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
 
-    if ( is_home() || is_front_page() ) { // Check if it's the homepage or front page
-        // Common Open Graph and Twitter Card tags for the homepage
-        echo '<meta property="og:title" content="' . get_bloginfo( 'name' ) . '"/>';
-        echo '<meta property="og:type" content="website"/>';
-        echo '<meta property="og:url" content="' . esc_url( home_url( '/' ) ) . '"/>';
-        echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
+    $og_type = 'website'; // Default type
+    $og_title = get_bloginfo( 'name' );
+    $og_url = esc_url( home_url( '/' ) );
+    $og_description = $default_description;
 
-        // Description for the homepage
-        echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
-
-        // Default image for Open Graph and Twitter Cards
-        $image_data = wp_get_image_editor( $default_image_url );
-        if ( ! is_wp_error( $image_data ) ) {
-            $image_meta = $image_data->get_size();
-            // Output og:image and twitter:image tags and their dimensions
-            echo '<meta property="og:image" content="' . esc_attr( $default_image_url ) . '"/>';
-            echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-            echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-            echo '<meta name="twitter:image" content="' . esc_attr( $default_image_url ) . '"/>';
-        }
-
-        // Twitter Card tags for the homepage
-        echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
-        echo '<meta name="twitter:title" content="' . get_bloginfo( 'name' ) . '"/>';
-        echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>'; // Use the same description for Twitter
-    } elseif ( is_singular() ) { // Singular post/page
+    if ( is_home() || is_front_page() ) {
+        $og_description = $default_description;
+    } elseif ( is_singular() ) {
         global $post;
-
-        // Common Open Graph tags for singular posts/pages
-        echo '<meta property="og:title" content="' . get_the_title() . '"/>';
-        echo '<meta property="og:type" content="article"/>';
-        echo '<meta property="og:url" content="' . get_permalink() . '"/>';
-        echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
-
-        // Description
+        $og_title = get_the_title();
+        $og_url = get_permalink();
         $post_description = get_post_meta( $post->ID, 'description', true ) ?: get_the_excerpt();
-        if ( ! empty( $post_description ) ) {
-            echo '<meta property="og:description" content="' . esc_attr( $post_description ) . '"/>';
+        $og_description = ! empty( $post_description ) ? esc_html( $post_description ) : get_the_excerpt();
+
+        if ( is_singular( 'post' ) ) {
+            $og_type = 'article';
+        } else {
+            $og_type = 'website';
         }
 
-        // Featured image and its dimensions
         if ( has_post_thumbnail( $post->ID ) ) {
             $thumbnail_id = get_post_thumbnail_id( $post->ID );
             $thumbnail_src = wp_get_attachment_image_src( $thumbnail_id, 'full' );
             $image_meta = wp_get_attachment_metadata( $thumbnail_id );
-            // Output og:image tag and its dimensions
             if ( isset( $thumbnail_src[0] ) ) {
-                echo '<meta property="og:image" content="' . esc_attr( $thumbnail_src[0] ) . '"/>';
-                if ( isset( $image_meta['width'] ) && isset( $image_meta['height'] ) ) {
-                    echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-                    echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-                }
-            }
-        } else {
-            // Default image for singular posts/pages without a featured image
-            $image_data = wp_get_image_editor( $default_image_url );
-            if ( ! is_wp_error( $image_data ) ) {
-                $image_meta = $image_data->get_size();
-                // Output og:image tag and its dimensions
-                echo '<meta property="og:image" content="' . esc_attr( $default_image_url ) . '"/>';
-                echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-                echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-                echo '<meta name="twitter:image" content="' . esc_attr( $default_image_url ) . '"/>';
+                $image_url = esc_attr( $thumbnail_src[0] );
+                $image_width = $image_meta['width'];
+                $image_height = $image_meta['height'];
             }
         }
+    } elseif ( is_author() ) {
+        $author_name = get_the_author_meta( 'display_name' );
+        $og_description = "With Each Mile | Author - " . $author_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_url = get_author_posts_url( get_the_author_meta( 'ID' ) );
+    } elseif ( is_category() ) {
+        $category_name = single_cat_title('', false);
+        $og_description = "With Each Mile | Category - " . $category_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_url = get_category_link( get_queried_object_id() );
+    } elseif ( is_tag() ) {
+        $tag_name = single_tag_title('', false);
+        $og_description = "With Each Mile | Tag - " . $tag_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_url = get_tag_link( get_queried_object_id() );
+    }
 
-        // Twitter Card tags for singular posts/pages
-        echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
-        echo '<meta name="twitter:title" content="' . get_the_title() . '"/>';
-
-        // Description
-        if ( ! empty( $post_description ) ) {
-            echo '<meta name="twitter:description" content="' . esc_attr( $post_description ) . '"/>';
-        }
-
-        // Featured image
-        if ( has_post_thumbnail( $post->ID ) ) {
-            $thumbnail_id = get_post_thumbnail_id( $post->ID );
-            $thumbnail_src = wp_get_attachment_image_src( $thumbnail_id, 'full' );
-            if ( isset( $thumbnail_src[0] ) ) {
-                echo '<meta name="twitter:image" content="' . esc_attr( $thumbnail_src[0] ) . '"/>';
-            }
-        }
-    } elseif ( is_author() || is_category() || is_tag() ) { // Author, category, or tag page
-        // Common Open Graph and Twitter Card tags for author, category, and tag pages
-        $term = $GLOBALS['wp_query']->get_queried_object();
-        echo '<meta property="og:title" content="' . $term->name . '"/>';
-        echo '<meta property="og:type" content="website"/>';
-        echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
-
-        // Default image for Open Graph and Twitter Cards
+    if ( ! isset( $image_url ) ) {
         $image_data = wp_get_image_editor( $default_image_url );
         if ( ! is_wp_error( $image_data ) ) {
             $image_meta = $image_data->get_size();
-            // Output og:image and twitter:image tags and their dimensions
-            echo '<meta property="og:image" content="' . esc_attr( $default_image_url ) . '"/>';
-            echo '<meta property="og:image:width" content="' . $image_meta['width'] . '"/>';
-            echo '<meta property="og:image:height" content="' . $image_meta['height'] . '"/>';
-            echo '<meta name="twitter:image" content="' . esc_attr( $default_image_url ) . '"/>';
+            $image_url = esc_attr( $default_image_url );
+            $image_width = $image_meta['width'];
+            $image_height = $image_meta['height'];
         }
-
-        // Twitter Card tags for author, category, and tag pages
-        echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
-        echo '<meta name="twitter:title" content="' . $term->name . '"/>';
-
-        // Description (optional)
-        // echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>'; // You can include a default description if needed
     }
+
+    // Common Open Graph and Twitter Card tags
+    echo '<meta property="og:title" content="' . $og_title . '"/>';
+    echo '<meta property="og:type" content="' . $og_type . '"/>';
+    echo '<meta property="og:url" content="' . $og_url . '"/>';
+    echo '<meta property="og:site_name" content="' . get_bloginfo( 'name' ) . '"/>';
+    echo '<meta property="og:description" content="' . $og_description . '"/>';
+
+    if ( isset( $image_url ) ) {
+        echo '<meta property="og:image" content="' . $image_url . '"/>';
+        echo '<meta property="og:image:width" content="' . $image_width . '"/>';
+        echo '<meta property="og:image:height" content="' . $image_height . '"/>';
+        echo '<meta name="twitter:image" content="' . $image_url . '"/>';
+    }
+
+    // Twitter Card tags
+    echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
+    echo '<meta name="twitter:title" content="' . $og_title . '"/>';
+    echo '<meta name="twitter:description" content="' . $og_description . '"/>';
 
     // Locale
     echo '<meta property="og:locale" content="en_US"/>';
-
     echo "\n";
 }
 
