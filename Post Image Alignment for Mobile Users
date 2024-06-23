@@ -1,19 +1,22 @@
 @media screen and (max-width: 600px) {
-  .wp-block-image.alignleft img {
-    max-width: calc(100vw - 5px) !important;
+  .wp-block-image.alignleft,
+  .wp-block-image.alignright {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: left; /* Left-align the image and caption */
+  }
+
+  .wp-block-image.alignleft img,
+  .wp-block-image.alignright img {
+    max-width: 100% !important;
     width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
     display: block !important;
   }
-}
 
-@media screen and (max-width: 600px) {
-  .wp-block-image.alignright img {
-    max-width: calc(100vw - 5px) !important;
-    width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    display: block !important;
+  .wp-block-image.alignleft figcaption,
+  .wp-block-image.alignright figcaption {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: left; /* Left-align the caption text */
   }
 }
