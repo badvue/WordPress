@@ -1,0 +1,7 @@
+.paragraph-minimum-16px p {
+    font-size: clamp(16px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
+}
+
+.paragraph-minimum-16px p strong {
+    font-size: inherit; /* Optional: Inherit the paragraph's font size for strong elements within paragraphs */
+}
