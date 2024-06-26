@@ -5,3 +5,7 @@
 .paragraph-minimum-16px p strong {
     font-size: inherit; /* Optional: Inherit the paragraph's font size for strong elements within paragraphs */
 }
+
+.h4-16px-font {
+    font-size: clamp(16px, 1vw, 16px) !important;
+}
