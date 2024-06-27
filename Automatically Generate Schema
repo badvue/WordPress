@@ -28,7 +28,9 @@ function generate_schema() {
             'https://www.instagram.com/witheachmile/',
             'https://www.threads.net/@witheachmile',
             'https://www.tiktok.com/@witheachmile',
-            'https://www.youtube.com/@WithEachMile'
+            'https://www.pinterest.com/WithEachMile/',
+            'https://www.youtube.com/@WithEachMile',
+            'https://www.facebook.com/WithEachMile/'
             // Add more website sameAs URLs as needed
         )
     );
