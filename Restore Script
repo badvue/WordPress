@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Destination directory (same as in your backup script)
+DEST_DIR="/Desktop/WordPress/Travel/"
+
+# Function to list .tar.gz files in the backup directory
+list_files() {
+    echo "Available backup files:"
+    ls /home/dev/WithEachMile-Backups/*.tar.gz
+}
+
+# Function to prompt for confirmation
+confirm_restore() {
+    read -p "Are you sure you want to restore $1 to $DEST_DIR? Type 'continue' to proceed: " confirmation
+    if [ "$confirmation" != "continue" ]; then
+        echo "Restore cancelled."
+        exit 1
+    fi
+}
+
+# Main script
+list_files
+
+# Prompt for the file to restore
+read -p "Enter the name of the backup file to restore (include path if not in the current directory): " BACKUP_FILE
+
+# Check if the file exists
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "Error: File not found!"
+    exit 1
+fi
+
+# Confirm the restore action
+confirm_restore "$BACKUP_FILE"
+
+# Restore the backup
+tar -xzf "$BACKUP_FILE" -C "$DEST_DIR"
+
+# Check if restore was successful
+if [ $? -eq 0 ]; then
+    echo "Restore successful! $BACKUP_FILE has been extracted to $DEST_DIR"
+else
+    echo "Restore failed."
+fi
