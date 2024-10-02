@@ -1,9 +1,32 @@
 .paragraph-minimum-16px p {
-    font-size: clamp(16px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
+    font-size: clamp(18px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
 }
 
 .paragraph-minimum-16px p strong {
-    font-size: inherit; /* Optional: Inherit the paragraph's font size for strong elements within paragraphs */
+    font-size: inherit;
+}
+
+.paragraph-minimum-16px ul,
+.paragraph-minimum-16px ol {
+    font-size: clamp(18px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
+}
+
+.paragraph-minimum-16px ul li,
+.paragraph-minimum-16px ol li {
+    font-size: inherit;
+}
+
+.paragraph-minimum-16px ul li strong,
+.paragraph-minimum-16px ol li strong,
+.paragraph-minimum-16px ul li b,
+.paragraph-minimum-16px ol li b,
+.paragraph-minimum-16px ul li em,
+.paragraph-minimum-16px ol li em,
+.paragraph-minimum-16px ul li i,
+.paragraph-minimum-16px ol li i,
+.paragraph-minimum-16px ul li u,
+.paragraph-minimum-16px ol li u {
+    font-size: inherit;
 }
 
 .h4-16px-font {
