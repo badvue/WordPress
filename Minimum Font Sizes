@@ -6,13 +6,13 @@
     font-size: inherit;
 }
 
-.paragraph-minimum-16px ul,
-.paragraph-minimum-16px ol {
+.paragraph-minimum-16px ul:not(.wp-block-social-links),
+.paragraph-minimum-16px ol:not(.wp-block-social-links) {
     font-size: clamp(18px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
 }
 
-.paragraph-minimum-16px ul li,
-.paragraph-minimum-16px ol li {
+.paragraph-minimum-16px ul li:not(.wp-block-social-links),
+.paragraph-minimum-16px ol li:not(.wp-block-social-links) {
     font-size: inherit;
 }
 
