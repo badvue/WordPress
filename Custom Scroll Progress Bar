@@ -1,0 +1,97 @@
+add_action('wp_body_open', function() {
+    if (is_single()) { // Only add the progress bar if it's a post
+        echo '<div id="wpcode-progress-bar"></div>';
+    }
+});
+
+add_action('wp_head', function() {
+    if (is_single()) { // Only add the styles if it's a post
+        echo '<style>
+            #wpcode-progress-bar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 0%;
+                height: 4px;
+                background-color: #0d6efd; /* Change the color as needed */
+                z-index: 99;
+            }
+            @media (min-width: 1025px) {
+                #wpcode-progress-bar {
+                    display: none; /* Hide on larger screens */
+                }
+            }
+        </style>';
+    }
+});
+
+add_action('wp_footer', function() {
+    if (is_single()) { // Only add the script if it's a post
+        echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const progressBar = document.getElementById("wpcode-progress-bar");
+                const articleContent = document.querySelector(".entry-content"); // Ensure this matches your article content class
+
+                if (!progressBar || !articleContent) {
+                    console.error("Progress bar or article content not found.");
+                    return;
+                }
+
+                let articleBottom = articleContent.offsetTop + articleContent.offsetHeight;
+
+                function updateProgressBar() {
+                    const scrollTop = window.scrollY;
+                    const viewportHeight = window.innerHeight;
+
+                    // Calculate the maximum scrollable height based on the article content
+                    const maxScrollableHeight = articleBottom - viewportHeight;
+
+                    // Only fill the progress bar based on the height of the content
+                    const progress = Math.min(Math.max((scrollTop / maxScrollableHeight) * 100, 0), 100);
+                    
+                    // Update progress bar width
+                    progressBar.style.width = (scrollTop > 0 ? progress : 0) + "%"; // Reset when at top
+                }
+
+                function updateArticleBottom() {
+                    articleBottom = articleContent.offsetTop + articleContent.offsetHeight;
+                }
+
+                // Smooth scroll update using requestAnimationFrame
+                let isScrolling = false;
+                document.addEventListener("scroll", function() {
+                    if (!isScrolling) {
+                        window.requestAnimationFrame(function() {
+                            updateProgressBar();
+                            isScrolling = false;
+                        });
+                        isScrolling = true;
+                    }
+                });
+
+                // Debounce resize event to limit recalculations
+                let resizeTimeout;
+                window.addEventListener("resize", function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(function() {
+                        updateArticleBottom(); // Recalculate article bottom on resize
+                        updateProgressBar(); // Update progress bar after recalculation
+                    }, 100);
+                });
+
+                // Recalculate article bottom when each image loads
+                const images = articleContent.querySelectorAll("img[loading=lazy]");
+                images.forEach((img) => {
+                    img.addEventListener("load", function handleImageLoad() {
+                        updateArticleBottom();
+                        img.removeEventListener("load", handleImageLoad); // Remove listener after load
+                    });
+                });
+
+                // Initial setup
+                updateArticleBottom();
+                updateProgressBar(); // Initial call to set the progress bar correctly
+            });
+        </script>';
+    }
+});
