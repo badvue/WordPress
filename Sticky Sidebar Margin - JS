@@ -1,0 +1,25 @@
+document.addEventListener("DOMContentLoaded", function() {
+    const sidebar = document.querySelector('.sticky-sidebar');
+    const parent = document.querySelector('.sidebar-column-height');
+
+    // Only proceed if both elements are present
+    if (sidebar && parent) {
+        function updateSidebarMargin() {
+            const parentHeight = parent.offsetHeight;
+            const twoThirdsHeight = (3 / 5) * parentHeight;
+
+            // Check if the screen width is greater than 782px
+            if (window.innerWidth > 782) {
+                sidebar.style.marginBottom = `${twoThirdsHeight}px`;
+            } else {
+                sidebar.style.marginBottom = '0px';
+            }
+        }
+
+        // Initial margin calculation
+        updateSidebarMargin();
+
+        // Recalculate on resize
+        window.addEventListener('resize', updateSidebarMargin);
+    }
+});
