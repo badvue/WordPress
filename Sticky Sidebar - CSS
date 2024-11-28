@@ -1,0 +1,17 @@
+.sticky-sidebar {
+position: sticky;
+top: -15px;
+}
+
+@media (min-width: 782px) and (max-width: 1024px) {
+.sticky-sidebar {
+top: 50px;
+}
+}
+
+@media (max-width: 781px) {
+.sticky-sidebar {
+position: relative;
+top: 0;
+}
+}
