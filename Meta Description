@@ -21,10 +21,12 @@ function add_custom_meta_des() {
         $category_name = single_cat_title('', false);
         $meta_des = "With Each Mile | Category - " . $category_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Category - ' . $category_name . '</h1>';
+        $noindex = true; // Set noindex for category pages
     } elseif ( is_tag() ) {
         $tag_name = single_tag_title('', false);
         $meta_des = "With Each Mile | Tag - " . $tag_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Tag - ' . $tag_name . '</h1>';
+        $noindex = true; // Set noindex for tag pages
     }
 
     if ( ! empty( $meta_des ) ) {
@@ -33,6 +35,11 @@ function add_custom_meta_des() {
 
     if ( isset( $hidden_h1 ) ) {
         echo $hidden_h1;
+    }
+
+    // Add the noindex tag if set
+    if ( isset( $noindex ) && $noindex ) {
+        echo '<meta name="robots" content="noindex, follow" />' . PHP_EOL;
     }
 }
 
