@@ -1,3 +1,9 @@
+.wp-block-post-date time,
+.wp-block-post-author-name a,
+.wp-block-group p.has-text-color.has-small-font-size {
+    font-size: 16px !important;
+}
+
 .paragraph-minimum-16px p:not(.affiliate-disclaimer-16px) {
     font-size: clamp(18px, calc(0.875rem + 1vw - 0.2rem), 1.2rem) !important;
 }
