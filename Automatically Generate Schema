@@ -3,28 +3,22 @@
 // It pulls information from your post such as the headline (title), author information (name and author URL), date published (year, month, day and time), the post URL, article sections (inserted as articleSection only if they are marked using a h2 or h3 header. If no h2 or h3 headings are used, articleSection is omitted from the Schema), images (featured image as well as any other images you've inserted into the post), paragraph text (inserted as articleBody, but removing h2 header text). This script will also mark the post as an "article". Modify lines 28 through 32 to adjust sameAs.
 
 // This code can be inserted into the functions.php file or inserted using WPCode. Once the code is added, you do not need to generate a Schema manually.
-function generate_schema() {
-    // Check if the current page is a post
-    if (!is_single()) {
-        return; // Exit if not a post
-    }
-
-    // Get post data
-    global $post;
-
-    // Initialize schema array
-    $schema = array(
-        '@context' => 'http://schema.org',
-        '@type' => 'Article',
-        'headline' => get_the_title(),
-        'author' => array(
-            '@type' => 'Person',
-            'name' => get_the_author_meta('display_name', $post->post_author),
-            'url' => get_author_posts_url($post->post_author)
+function get_social_profiles($slug) {
+    // Define social profiles for authors (Manually add their URLs here)
+    $authors_social = array(
+        'mbarrios' => array(
+            'https://www.facebook.com/minerva.barrios.12',
+            'https://www.instagram.com/whyiambroke.blog',
+            'https://www.tiktok.com/@whyiambroke.blog',
         ),
-        'datePublished' => get_the_date('c'),
-        'url' => get_permalink(),
-        'sameAs' => array(
+        'sfehling' => array(
+            'https://www.facebook.com/SamuelCFehling',
+            'https://www.instagram.com/dr.bean_phd/',
+            'https://www.threads.net/@dr.bean_phd',
+            'https://bsky.app/profile/nerdyspace.net',
+            'https://github.com/badvue',
+        ),
+        'default' => array(
             'https://www.instagram.com/witheachmile/',
             'https://www.threads.net/@witheachmile',
             'https://www.tiktok.com/@witheachmile',
@@ -32,73 +26,152 @@ function generate_schema() {
             'https://www.youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
             'https://www.facebook.com/WithEachMile/'
-            // Add more website sameAs URLs as needed
         )
     );
 
-    // Extract articleSection from h2 and h3 tags
-    $article_sections = array();
-    $has_headings = preg_match_all('/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $post->post_content, $matches);
-
-    if ($has_headings) {
-        foreach ($matches[1] as $section) {
-            $section = wp_strip_all_tags(html_entity_decode(str_replace('&nbsp;', ' ', $section), ENT_QUOTES, 'UTF-8'), true);
-            $section = trim($section);
-            $article_sections[] = $section;
-        }
-    }
-
-    // If there are any article sections, add them to schema
-    if (!empty($article_sections)) {
-        $schema['articleSection'] = $article_sections;
-    }
-
-    // Extract images from post content
-    $image_urls = array();
-
-    // Add featured image URL to image_urls array
-    $featured_image_url = get_the_post_thumbnail_url($post->ID, 'full');
-    if ($featured_image_url) {
-        $image_urls[] = $featured_image_url;
-    }
-
-    // Match all image tags in post content
-    preg_match_all('/<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>/i', $post->post_content, $matches);
-    if (!empty($matches[1])) {
-        $image_urls = array_merge($image_urls, $matches[1]);
-    }
-
-    // Add images to schema
-    if (!empty($image_urls)) {
-        $schema['image'] = $image_urls; // Include multiple images
-    }
-
-    // Remove h2 and h3 headers from the post content
-    $content_without_headings = preg_replace('/<h[2-3][^>]*>.*?<\/h[2-3]>/i', '', $post->post_content);
-
-    // Extract plain text content of the post and remove newline characters
-    $plain_text_content = wp_strip_all_tags($content_without_headings);
-    $plain_text_content = str_replace(array("\r", "\n"), '', $plain_text_content);
-
-    // Replace non-breaking spaces with regular spaces
-    $plain_text_content = str_replace('&nbsp;', ' ', $plain_text_content);
-
-    // Replace em dashes with plain text
-    $plain_text_content = str_replace('—', '-', $plain_text_content);
-
-    $schema['articleBody'] = $plain_text_content;
-
-    // Encode schema to JSON
-    $json_ld = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_IGNORE);
-
-    // Buffer output
-    ob_start(); ?>
-    <script type="application/ld+json"><?php echo $json_ld; ?></script>
-    <?php $output = ob_get_clean();
-
-    // Output the buffered content just before </head>
-    echo $output;
+    // Return the profiles for the author or the default profiles if not found
+    return isset($authors_social[$slug]) ? $authors_social[$slug] : $authors_social['default'];
 }
 
-// Call the function just before </head>
+function generate_schema() {
+    // Check if it's the homepage or a post
+    if (is_front_page() || is_home()) {
+        $homepage_schema = array(
+            '@context' => 'http://schema.org',
+            '@type' => 'WebSite',
+            'name' => 'With Each Mile',
+            'url' => 'https://witheachmile.com/',
+            'sameAs' => get_social_profiles('default'), // Social profiles for the homepage
+            'publisher' => array(
+                '@type' => 'Organization',
+                'name' => 'With Each Mile',
+                'logo' => array(
+                    '@type' => 'ImageObject',
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                ),
+                // Removed 'sameAs' from publisher for homepage
+            )
+        );
+        echo '<script type="application/ld+json">' . json_encode($homepage_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+    }
+
+    // Check if it's a single post
+    if (is_single()) {
+        global $post;
+
+        // Get the author's data
+        $author_id = $post->post_author;
+        $author_name = get_the_author_meta('display_name', $author_id);
+        $author_slug = get_the_author_meta('user_nicename', $author_id);
+
+        $schema = array(
+            '@context' => 'http://schema.org',
+            '@type' => 'Article',
+            'headline' => get_the_title(),
+            'author' => array(
+                '@type' => 'Person',
+                'name' => $author_name,
+                'url' => get_author_posts_url($author_id),
+                'sameAs' => get_social_profiles($author_slug) // Social profiles for the author
+            ),
+            'datePublished' => get_the_date('c'),
+            'url' => get_permalink(),
+            'inLanguage' => 'en',
+            'publisher' => array(
+                '@type' => 'Organization',
+                'name' => 'With Each Mile',
+                'logo' => array(
+                    '@type' => 'ImageObject',
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                ),
+                'sameAs' => get_social_profiles('default')  // Social profiles for publisher
+            ),
+            'mainEntityOfPage' => array(
+                '@type' => 'WebPage',
+                '@id' => get_permalink()
+            )
+        );
+
+        // Add article sections if there are any headings
+        $article_sections = array();
+        preg_match_all('/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $post->post_content, $matches);
+        foreach ($matches[1] as $section) {
+            $section = wp_strip_all_tags(html_entity_decode(str_replace('&nbsp;', ' ', $section), ENT_QUOTES, 'UTF-8'), true);
+            $article_sections[] = trim($section);
+        }
+        if ($article_sections) {
+            $schema['articleSection'] = $article_sections;
+        }
+
+        // Extract images from post content
+        $image_urls = array();
+        $featured_image_url = get_the_post_thumbnail_url($post->ID, 'full');
+        if ($featured_image_url) {
+            $image_urls[] = $featured_image_url;
+        }
+        preg_match_all('/<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>/i', $post->post_content, $matches);
+        if (!empty($matches[1])) {
+            $image_urls = array_merge($image_urls, $matches[1]);
+        }
+
+        // Add image objects to schema
+        $image_objects = array();
+        foreach ($image_urls as $image_url) {
+            $image_path = parse_url($image_url, PHP_URL_PATH);
+            $image_size = @getimagesize($_SERVER['DOCUMENT_ROOT'] . $image_path);
+            if ($image_size) {
+                $image_objects[] = array(
+                    '@type' => 'ImageObject',
+                    'url' => $image_url,
+                    'width' => $image_size[0],
+                    'height' => $image_size[1]
+                );
+            }
+        }
+        if (!empty($image_objects)) {
+            $schema['image'] = $image_objects;
+        }
+
+        // Remove h2 and h3 headers from the content for plain text extraction
+        $content_without_headings = preg_replace('/<h[2-3][^>]*>.*?<\/h[2-3]>/i', '', $post->post_content);
+        $plain_text_content = wp_strip_all_tags($content_without_headings);
+        $plain_text_content = str_replace(array("\r", "\n", '&nbsp;', '—'), ' ', $plain_text_content);
+        $schema['articleBody'] = $plain_text_content;
+
+        echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+    }
+
+    // Check if it's the "About Us" page
+    if (is_page('about-us')) {
+        $about_us_schema = array(
+            '@context' => 'http://schema.org',
+            '@type' => 'WebPage',
+            'name' => 'About Us - With Each Mile',
+            'url' => 'https://witheachmile.com/about-us/',
+            'description' => 'Learn more about the creators behind With Each Mile and their adventures.',
+            'publisher' => array(
+                '@type' => 'Organization',
+                'name' => 'With Each Mile',
+                'logo' => array(
+                    '@type' => 'ImageObject',
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                ),
+                'sameAs' => get_social_profiles('default')  // Social profiles for publisher
+            ),
+            'creator' => array(
+                '@type' => 'Person',
+                'name' => 'Sam',
+                'sameAs' => get_social_profiles('sfehling')
+            ),
+            'contributor' => array(
+                '@type' => 'Person',
+                'name' => 'Minerva',
+                'sameAs' => get_social_profiles('mbarrios')
+            ),
+        );
+        echo '<script type="application/ld+json">' . json_encode($about_us_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+    }
+}
+
+// Hook function into wp_head
 add_action('wp_head', 'generate_schema', 999);
