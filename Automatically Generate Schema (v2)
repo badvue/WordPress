@@ -38,12 +38,18 @@ function generate_schema_from_blocks($content) {
     libxml_clear_errors();
 
     $schemas = [];
-    
+
+    // Get custom field 'rating' for all products
+    $product_ratings = get_post_meta(get_the_ID(), 'rating', true);
+    // Split the product ratings by line (enter key separation)
+    $ratings = explode("\n", $product_ratings);
+
     foreach ($dom->getElementsByTagName('div') as $group) {
         if (strpos($group->getAttribute('class'), 'wp-block-group') !== false) {
             $name = '';
-            $reviewBody = '';
+            $description = ''; // Description field
             $image = '';
+            $rating_value = 5; // Default rating if no rating is set
 
             // Extract the product name (strong element in paragraph)
             foreach ($group->getElementsByTagName('p') as $p) {
@@ -53,14 +59,14 @@ function generate_schema_from_blocks($content) {
                 }
             }
 
-            // Extract the review body, stripping out any links
+            // Extract the description, stripping out any links (but after the image)
             foreach ($group->getElementsByTagName('p') as $p) {
                 if (!$p->getElementsByTagName('strong')->length) {
-                    // Remove any <a> tags from the review body
+                    // Remove any <a> tags from the description
                     foreach ($p->getElementsByTagName('a') as $a) {
                         $a->parentNode->removeChild($a);
                     }
-                    $reviewBody = trim($p->textContent);
+                    $description = trim($p->textContent); // Update variable to description
                     break;
                 }
             }
@@ -72,24 +78,34 @@ function generate_schema_from_blocks($content) {
                 }
             }
 
+            // Match the product name with its rating in the custom fields
+            foreach ($ratings as $rating_entry) {
+                if (strpos($rating_entry, $name) !== false) {
+                    // Extract the rating value (the last part after the space)
+                    $rating_parts = explode(' ', trim($rating_entry));
+                    $rating_value = floatval(end($rating_parts));
+                    break;
+                }
+            }
+
             // Only add schema if all required data is present
-            if ($name && $reviewBody && $image) {
-                // Generate the schema without "description" field
+            if ($name && $description && $image) {
+                // Generate the schema with the image and description outside of the review section
                 $schemas[] = [
                     "@context" => "https://schema.org",
                     "@type" => "Product",
                     "name" => $name,
                     "image" => $image,
+                    "description" => $description, // Description placed here
                     "review" => [
                         "@type" => "Review",
                         "author" => [
-                            "@type" => "Person",
-                            "name" => "Sam"
+                            "@type" => "Organization",
+                            "name" => "With Each Mile"
                         ],
-                        "reviewBody" => $reviewBody,
                         "reviewRating" => [
                             "@type" => "Rating",
-                            "ratingValue" => "5",
+                            "ratingValue" => $rating_value, // Dynamically set rating value
                             "bestRating" => "5",
                             "worstRating" => "1"
                         ]
