@@ -148,7 +148,7 @@ function generate_schema() {
 
         $schema = array(
             '@context' => 'http://schema.org',
-            '@type' => 'Article',
+            '@type' => 'BlogPosting',
             'headline' => get_the_title(),
             'author' => array(
                 '@type' => 'Person',
