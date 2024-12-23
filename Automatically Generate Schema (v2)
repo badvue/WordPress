@@ -227,7 +227,7 @@ function generate_schema() {
     if (is_page('about-us')) {
         $about_us_schema = array(
             '@context' => 'http://schema.org',
-            '@type' => 'WebPage',
+            '@type' => 'AboutPage',
             'name' => 'About Us - With Each Mile',
             'url' => 'https://witheachmile.com/about-us/',
             'description' => 'Learn more about the creators behind With Each Mile and their adventures.',
