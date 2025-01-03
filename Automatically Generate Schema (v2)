@@ -20,6 +20,7 @@ function get_social_profiles($slug) {
             'https://www.pinterest.com/WithEachMile/',
             'https://www.youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
+			'https://flipboard.com/@WithEachMile',
             'https://www.facebook.com/WithEachMile/'
         )
     );
@@ -170,7 +171,8 @@ function generate_schema() {
             ),
             'mainEntityOfPage' => array(
                 '@type' => 'WebPage',
-                '@id' => get_permalink()
+                '@id' => get_permalink(),
+                'url' => get_permalink() // Added the URL here
             )
         );
 
