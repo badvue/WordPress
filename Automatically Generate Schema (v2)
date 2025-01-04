@@ -172,7 +172,16 @@ function generate_schema() {
             'mainEntityOfPage' => array(
                 '@type' => 'WebPage',
                 '@id' => get_permalink(),
-                'url' => get_permalink() // Added the URL here
+                'url' => get_permalink()
+            ),
+            'potentialAction' => array(
+                '@type' => 'ReadAction',
+                'target' => array(
+                    array(
+                        '@type' => 'EntryPoint',
+                        'url' => get_permalink()
+                    )
+                )
             )
         );
 
@@ -215,12 +224,6 @@ function generate_schema() {
         if (!empty($image_objects)) {
             $schema['image'] = $image_objects;
         }
-
-        // Remove h2 and h3 headers from the content for plain text extraction
-        $content_without_headings = preg_replace('/<h[2-3][^>]*>.*?<\/h[2-3]>/i', '', $post->post_content);
-        $plain_text_content = wp_strip_all_tags($content_without_headings);
-        $plain_text_content = str_replace(array("\r", "\n", '&nbsp;', '—'), ' ', $plain_text_content);
-        $schema['articleBody'] = $plain_text_content;
 
         echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
