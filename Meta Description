@@ -9,7 +9,6 @@ function add_custom_meta_des() {
         $des = get_post_meta( get_the_ID(), 'description', true );
         $meta_des = ! empty( $des ) ? esc_html( $des ) : get_the_excerpt();
         
-        // If there's no custom description, use the excerpt
         if ( empty( $meta_des ) ) {
             $meta_des = get_the_excerpt();
         }
@@ -36,7 +35,6 @@ function add_custom_meta_des() {
         echo $hidden_h1;
     }
 
-    // Add the noindex tag if set
     if ( isset( $noindex ) && $noindex ) {
         echo '<meta name="robots" content="noindex, follow" />' . PHP_EOL;
     }
