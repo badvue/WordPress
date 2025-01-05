@@ -4,10 +4,10 @@
 
 // Function to insert Open Graph and Twitter Card meta tags
 function insert_social_meta_tags() {
-    $default_image_url = "https://witheachmile.com/wp-content/uploads/2024/04/Rectangle-Logo-Full-Size.webp";
-    $default_description = "Minerva and Samuel balance 9-to-5 jobs with wanderlust, join us as we document our cross-country adventures navigating the challenges of time and budget.";
+    $default_image_url = "https://witheachmile.com/wp-content/uploads/2025/01/With-Each-Mile-Sam-Hiking-Obstruction-Point.webp";
+    $default_description = "Minerva, Sam, and their pups, Toby & Lily, share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
 
-    $og_type = 'website'; // Default type
+    $og_type = 'website';
     $og_title = get_bloginfo( 'name' );
     $og_url = esc_url( home_url( '/' ) );
     $og_description = $default_description;
@@ -39,15 +39,15 @@ function insert_social_meta_tags() {
         }
     } elseif ( is_author() ) {
         $author_name = get_the_author_meta( 'display_name' );
-        $og_description = "With Each Mile | Author - " . $author_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_description = "With Each Mile | Author - " . $author_name . " | Minerva and Sam share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
         $og_url = get_author_posts_url( get_the_author_meta( 'ID' ) );
     } elseif ( is_category() ) {
         $category_name = single_cat_title('', false);
-        $og_description = "With Each Mile | Category - " . $category_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_description = "With Each Mile | Category - " . $category_name . " | Minerva and Sam share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
         $og_url = get_category_link( get_queried_object_id() );
     } elseif ( is_tag() ) {
         $tag_name = single_tag_title('', false);
-        $og_description = "With Each Mile | Tag - " . $tag_name . " | Join Minerva & Samuel's cross-country adventures, balancing work with wanderlust, navigating time & budget.";
+        $og_description = "With Each Mile | Tag - " . $tag_name . " | Minerva and Sam share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
         $og_url = get_tag_link( get_queried_object_id() );
     }
 
@@ -61,7 +61,6 @@ function insert_social_meta_tags() {
         }
     }
 
-    // Common Open Graph and Twitter Card tags
     echo '<meta property="og:title" content="' . $og_title . '"/>';
     echo '<meta property="og:type" content="' . $og_type . '"/>';
     echo '<meta property="og:url" content="' . $og_url . '"/>';
@@ -75,12 +74,10 @@ function insert_social_meta_tags() {
         echo '<meta name="twitter:image" content="' . $image_url . '"/>';
     }
 
-    // Twitter Card tags
-    echo '<meta name="twitter:card" content="summary_large_image"/>'; // Twitter Card type
+    echo '<meta name="twitter:card" content="summary_large_image"/>';
     echo '<meta name="twitter:title" content="' . $og_title . '"/>';
     echo '<meta name="twitter:description" content="' . $og_description . '"/>';
 
-    // Locale
     echo '<meta property="og:locale" content="en_US"/>';
     echo "\n";
 }
