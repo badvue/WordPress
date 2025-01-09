@@ -133,8 +133,10 @@ function generate_schema() {
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
-                )
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
+               )
             )
         );
         echo '<script type="application/ld+json">' . json_encode($homepage_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
@@ -146,6 +148,10 @@ function generate_schema() {
         $author_id = $post->post_author;
         $author_name = get_the_author_meta('display_name', $author_id);
         $author_slug = get_the_author_meta('user_nicename', $author_id);
+        $modified_date = get_the_modified_date('c'); // Get the modified date
+
+        // Remove "Updated on" text if present
+        $modified_date = preg_replace('/^Updated on\s+/i', '', $modified_date);
 
         $schema = array(
             '@context' => 'http://schema.org',
@@ -158,6 +164,7 @@ function generate_schema() {
                 'sameAs' => get_social_profiles($author_slug)
             ),
             'datePublished' => get_the_date('c'),
+            'dateModified' => $modified_date,
             'url' => get_permalink(),
             'inLanguage' => 'en',
             'publisher' => array(
@@ -165,8 +172,10 @@ function generate_schema() {
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
-                ),
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
+               ),
                 'sameAs' => get_social_profiles('default')
             ),
             'mainEntityOfPage' => array(
@@ -241,7 +250,9 @@ function generate_schema() {
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
                 ),
                 'sameAs' => get_social_profiles('default')
             ),
@@ -281,7 +292,9 @@ function generate_schema() {
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
                 ),
                 'sameAs' => get_social_profiles('default')
             )
@@ -289,6 +302,4 @@ function generate_schema() {
         echo '<script type="application/ld+json">' . json_encode($our_gear_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
 }
-
-// Hook the schema generation function into wp_head
-add_action('wp_head', 'generate_schema', 999);
+add_action('wp_head', 'generate_schema');
