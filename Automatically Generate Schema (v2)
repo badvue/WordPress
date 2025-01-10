@@ -273,9 +273,15 @@ function generate_schema() {
     // Check if it's the "Our Gear" page
     if (is_page('our-gear')) {
         global $post;
+
+        // Get the published and modified dates
+        $date_published = get_the_date('c', $post->ID);
+        $date_modified = get_the_modified_date('c', $post->ID);
+
+        // Generate schema for each product
         $product_schemas = generate_schema_from_blocks($post->post_content);
 
-        // Output the product schema
+        // Output the product schemas
         foreach ($product_schemas as $product_schema) {
             echo '<script type="application/ld+json">' . json_encode($product_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
         }
@@ -287,6 +293,8 @@ function generate_schema() {
             'name' => 'Our Gear - With Each Mile',
             'url' => 'https://witheachmile.com/our-gear/',
             'description' => 'Explore the gear we use and recommend for our adventures.',
+            'datePublished' => $date_published,
+            'dateModified' => $date_modified,
             'publisher' => array(
                 '@type' => 'Organization',
                 'name' => 'With Each Mile',
@@ -299,6 +307,7 @@ function generate_schema() {
                 'sameAs' => get_social_profiles('default')
             )
         );
+
         echo '<script type="application/ld+json">' . json_encode($our_gear_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
 }
