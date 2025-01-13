@@ -20,12 +20,11 @@ function get_social_profiles($slug) {
             'https://www.pinterest.com/WithEachMile/',
             'https://www.youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
-			'https://flipboard.com/@WithEachMile',
-            'https://www.facebook.com/WithEachMile/'
+            'https://flipboard.com/@WithEachMile',
+            'https://www.facebook.com/WithEachMile/',
         )
     );
 
-    // Return the profiles for the author or the default profiles if not found
     return isset($authors_social[$slug]) ? $authors_social[$slug] : $authors_social['default'];
 }
 
@@ -239,11 +238,14 @@ function generate_schema() {
 
     // Check if it's the "About Us" page
     if (is_page('about-us')) {
+        $date_published = get_the_date('c'); // Get the published date of the page
+
         $about_us_schema = array(
             '@context' => 'http://schema.org',
             '@type' => 'AboutPage',
             'name' => 'About Us - With Each Mile',
             'url' => 'https://witheachmile.com/about-us/',
+            'datePublished' => $date_published, // Include the published date
             'description' => 'Learn more about the creators behind With Each Mile and their adventures.',
             'publisher' => array(
                 '@type' => 'Organization',
@@ -267,6 +269,7 @@ function generate_schema() {
                 'sameAs' => get_social_profiles('mbarrios')
             )
         );
+
         echo '<script type="application/ld+json">' . json_encode($about_us_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
 
