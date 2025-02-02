@@ -3,7 +3,7 @@ function get_social_profiles($slug) {
     $authors_social = array(
         'mbarrios' => array(
             'https://www.facebook.com/minerva.barrios.12',
-            'https://www.instagram.com/whyiambroke.blog',
+            'https://bsky.app/profile/whyiambroke.blog',
             'https://www.tiktok.com/@whyiambroke.blog',
         ),
         'sfehling' => array(
