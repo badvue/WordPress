@@ -1,0 +1,27 @@
+function add_image_title_from_filename($html) {
+    return preg_replace_callback(
+        '/<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>/i',
+        function($matches) {
+            $filename = pathinfo($matches[1], PATHINFO_FILENAME);
+            $filename = preg_replace('/-\d+x\d+$/', '', $filename);
+            $title = ucwords(str_replace(['-', '_'], ' ', $filename));
+            
+            return str_replace('<img', '<img title="' . esc_attr($title) . '"', $matches[0]);
+        },
+        $html
+    );
+}
+
+add_filter('the_content', 'add_image_title_from_filename');
+add_filter('post_thumbnail_html', 'add_image_title_from_filename');
+
+function add_image_title_to_blocks($block_content, $block) {
+    $image_blocks = ['core/image', 'core/cover', 'core/media-text'];
+
+    if (in_array($block['blockName'], $image_blocks, true)) {
+        $block_content = add_image_title_from_filename($block_content);
+    }
+    return $block_content;
+}
+
+add_filter('render_block', 'add_image_title_to_blocks', 10, 2);
