@@ -7,10 +7,11 @@ function add_custom_meta_des() {
         $meta_des = "Minerva, Sam, and their pups, Toby & Lily, share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
     } elseif ( is_single() || is_page() ) {
         $des = get_post_meta( get_the_ID(), 'description', true );
-        $meta_des = ! empty( $des ) ? esc_html( $des ) : get_the_excerpt();
-        
-        if ( empty( $meta_des ) ) {
-            $meta_des = get_the_excerpt();
+        if ( ! empty( $des ) ) {
+            $meta_des = esc_html( $des );
+        } else {
+            $excerpt = get_the_excerpt();
+            $meta_des = ( strlen( $excerpt ) > 160 ) ? substr( $excerpt, 0, 157 ) . '...' : $excerpt;
         }
     } elseif ( is_author() ) {
         $author_name = get_the_author_meta( 'display_name' );
@@ -24,7 +25,6 @@ function add_custom_meta_des() {
         $tag_name = single_tag_title('', false);
         $meta_des = "With Each Mile | Tag - " . $tag_name . " | Minerva and Sam share their hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
         $hidden_h1 = '<h1 class="screen-reader-text">With Each Mile | Tag - ' . $tag_name . '</h1>';
-        $noindex = true;
     }
 
     if ( ! empty( $meta_des ) ) {
@@ -33,10 +33,6 @@ function add_custom_meta_des() {
 
     if ( isset( $hidden_h1 ) ) {
         echo $hidden_h1;
-    }
-
-    if ( isset( $noindex ) && $noindex ) {
-        echo '<meta name="robots" content="noindex, follow" />' . PHP_EOL;
     }
 }
 
