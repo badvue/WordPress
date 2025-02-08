@@ -1,0 +1,18 @@
+// AllTrails embed code loads immediately upon site load, resulting in a lot of http requests. This script lazy loads the map so it will not load until a viewer scrolls down closer to the map, improving initial load time.
+<div class="embed-container alltrails-container" id="mapContainer">
+    <div class="placeholder">Loading AllTrails Map...</div>
+    <iframe class="alltrails" data-defer="true" frameborder="0" scrolling="no" title="AllTrails Map" loading="lazy" style="display:none;"></iframe>
+</div>
+
+<script>
+    window.addEventListener('load', () => {
+        const iframe = document.querySelector('iframe[data-defer]');
+        const placeholder = document.querySelector('.placeholder');
+
+        if (iframe) {
+            iframe.src = "https://www.alltrails.com/link";
+            iframe.style.display = 'block';
+        }
+        if (placeholder) placeholder.style.display = 'none';
+    });
+</script>
