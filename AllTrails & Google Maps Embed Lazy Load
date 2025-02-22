@@ -1,0 +1,12 @@
+// This code adds Lazy Loading to embedded AllTrails maps or Google Maps. Code also adds, "Loading..." for slower to load devices while the iframe loads.
+// AllTrails Lazy Load
+<div class="embed-container alltrails-container">
+    <div class="placeholder">Loading AllTrails Map...</div>
+    <iframe class="alltrails" src="https://www.alltrails.com/link" frameborder="0" scrolling="no" title="AllTrails Map" loading="lazy" onload="this.previousElementSibling.style.display='none';"></iframe>
+</div>
+
+// Google Maps Lazy Load
+<div class="embed-container alltrails-container">
+    <div class="placeholder">Loading Google Maps...</div>
+    <iframe src="https://www.google.com/maps/d/link" style="border:0" referrerpolicy="no-referrer-when-downgrade" loading="lazy" onload="this.previousElementSibling.style.display='none';"></iframe>
+</div>
