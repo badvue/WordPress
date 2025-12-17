@@ -1,14 +1,7 @@
-// This is a plugin-free method to add Schema JSON-LD code automatically to the ending of your article head. This php script generates a Schema automatically for your WordPress posts and inserts it at the end of the head in the JSON-LD format.
-
-// It pulls information from your post such as the headline (title), author information (name and author URL), date published (year, month, day and time), the post URL, article sections (inserted as articleSection only if they are marked using a h2 or h3 header. If no h2 or h3 headings are used, articleSection is omitted from the Schema), images (featured image as well as any other images you've inserted into the post), paragraph text (inserted as articleBody, but removing h2 header text). This script will also mark the post as an "article". Modify lines 28 through 32 to adjust sameAs.
-
-// This code can be inserted into the functions.php file or inserted using WPCode. Once the code is added, you do not need to generate a Schema manually.
 function get_social_profiles($slug) {
-    // Define social profiles for authors (Manually add their URLs here)
     $authors_social = array(
         'mbarrios' => array(
-            'https://www.facebook.com/minerva.barrios.12',
-            'https://www.instagram.com/whyiambroke.blog',
+            'https://bsky.app/profile/whyiambroke.blog',
             'https://www.tiktok.com/@whyiambroke.blog',
         ),
         'sfehling' => array(
@@ -25,56 +18,146 @@ function get_social_profiles($slug) {
             'https://www.pinterest.com/WithEachMile/',
             'https://www.youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
-            'https://www.facebook.com/WithEachMile/'
+            'https://flipboard.com/@WithEachMile',
+            'https://www.facebook.com/WithEachMile/',
         )
     );
-
-    // Return the profiles for the author or the default profiles if not found
     return isset($authors_social[$slug]) ? $authors_social[$slug] : $authors_social['default'];
 }
 
+function generate_schema_from_blocks($content) {
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+
+    // Convert content to UTF-8 to avoid encoding issues
+    $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
+    $dom->loadHTML($content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors();
+
+    $schemas = [];
+
+    // Get custom field 'rating' for all products
+    $product_ratings = get_post_meta(get_the_ID(), 'rating', true);
+    // Split the product ratings by line (enter key separation)
+    $ratings = explode("\n", $product_ratings);
+
+    foreach ($dom->getElementsByTagName('div') as $group) {
+        if (strpos($group->getAttribute('class'), 'wp-block-group') !== false) {
+            $name = '';
+            $description = ''; // Description field
+            $image = '';
+            $rating_value = 5; // Default rating if no rating is set
+
+            // Extract the product name (strong element in paragraph)
+            foreach ($group->getElementsByTagName('h3') as $p) {
+                if ($p->getElementsByTagName('strong')->length > 0) {
+                    $name = trim($p->textContent);
+                    break;
+                }
+            }
+
+            // Extract the description, stripping out any links (but after the image)
+            foreach ($group->getElementsByTagName('p') as $p) {
+                if (!$p->getElementsByTagName('strong')->length) {
+                    // Remove any <a> tags from the description
+                    foreach ($p->getElementsByTagName('a') as $a) {
+                        $a->parentNode->removeChild($a);
+                    }
+                    $description = trim($p->textContent); // Update variable to description
+                    break;
+                }
+            }
+
+            // Extract the first image
+            foreach ($group->getElementsByTagName('img') as $img) {
+                if (!$image) {
+                    $image = $img->getAttribute('src');
+                }
+            }
+
+            // Match the product name with its rating in the custom fields
+            foreach ($ratings as $rating_entry) {
+                if (strpos($rating_entry, $name) !== false) {
+                    // Extract the rating value (the last part after the space)
+                    $rating_parts = explode(' ', trim($rating_entry));
+                    $rating_value = floatval(end($rating_parts));
+                    break;
+                }
+            }
+
+            // Only add schema if all required data is present
+            if ($name && $description && $image) {
+                // Generate the schema with the image and description outside of the review section
+                $schemas[] = [
+                    "@context" => "https://schema.org",
+                    "@type" => "Product",
+                    "name" => $name,
+                    "image" => $image,
+                    "description" => $description, // Description placed here
+                    "review" => [
+                        "@type" => "Review",
+                        "author" => [
+                            "@type" => "Organization",
+                            "name" => "With Each Mile"
+                        ],
+                        "reviewRating" => [
+                            "@type" => "Rating",
+                            "ratingValue" => $rating_value, // Dynamically set rating value
+                            "bestRating" => "5",
+                            "worstRating" => "1"
+                        ]
+                    ]
+                ];
+            }
+        }
+    }
+
+    return $schemas;
+}
+
 function generate_schema() {
-    // Check if it's the homepage or a post
     if (is_front_page() || is_home()) {
         $homepage_schema = array(
             '@context' => 'http://schema.org',
             '@type' => 'WebSite',
             'name' => 'With Each Mile',
             'url' => 'https://witheachmile.com/',
-            'sameAs' => get_social_profiles('default'), // Social profiles for the homepage
+            'sameAs' => get_social_profiles('default'),
             'publisher' => array(
                 '@type' => 'Organization',
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
-                ),
-                // Removed 'sameAs' from publisher for homepage
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
+                )
             )
         );
         echo '<script type="application/ld+json">' . json_encode($homepage_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
 
-    // Check if it's a single post
     if (is_single()) {
         global $post;
-
-        // Get the author's data
         $author_id = $post->post_author;
         $author_name = get_the_author_meta('display_name', $author_id);
         $author_slug = get_the_author_meta('user_nicename', $author_id);
+        $author_bio = get_the_author_meta('description', $author_id);
+        $modified_date = get_the_modified_date('c');
+        $modified_date = preg_replace('/^Updated on\s+/i', '', $modified_date);
 
         $schema = array(
             '@context' => 'http://schema.org',
-            '@type' => 'Article',
+            '@type' => 'BlogPosting',
             'headline' => get_the_title(),
             'author' => array(
                 '@type' => 'Person',
                 'name' => $author_name,
                 'url' => get_author_posts_url($author_id),
-                'sameAs' => get_social_profiles($author_slug) // Social profiles for the author
+                'sameAs' => get_social_profiles($author_slug),
             ),
             'datePublished' => get_the_date('c'),
+            'dateModified' => $modified_date,
             'url' => get_permalink(),
             'inLanguage' => 'en',
             'publisher' => array(
@@ -82,17 +165,28 @@ function generate_schema() {
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
                 ),
-                'sameAs' => get_social_profiles('default')  // Social profiles for publisher
+                'sameAs' => get_social_profiles('default')
             ),
             'mainEntityOfPage' => array(
                 '@type' => 'WebPage',
-                '@id' => get_permalink()
+                '@id' => get_permalink(),
+                'url' => get_permalink()
+            ),
+            'potentialAction' => array(
+                '@type' => 'ReadAction',
+                'target' => array(
+                    array(
+                        '@type' => 'EntryPoint',
+                        'url' => get_permalink()
+                    )
+                )
             )
         );
 
-        // Add article sections if there are any headings
         $article_sections = array();
         preg_match_all('/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $post->post_content, $matches);
         foreach ($matches[1] as $section) {
@@ -103,7 +197,10 @@ function generate_schema() {
             $schema['articleSection'] = $article_sections;
         }
 
-        // Extract images from post content
+        if (!empty($author_bio)) {
+            $schema['author']['description'] = $author_bio;
+        }
+
         $image_urls = array();
         $featured_image_url = get_the_post_thumbnail_url($post->ID, 'full');
         if ($featured_image_url) {
@@ -114,7 +211,6 @@ function generate_schema() {
             $image_urls = array_merge($image_urls, $matches[1]);
         }
 
-        // Add image objects to schema
         $image_objects = array();
         foreach ($image_urls as $image_url) {
             $image_path = parse_url($image_url, PHP_URL_PATH);
@@ -132,31 +228,31 @@ function generate_schema() {
             $schema['image'] = $image_objects;
         }
 
-        // Remove h2 and h3 headers from the content for plain text extraction
-        $content_without_headings = preg_replace('/<h[2-3][^>]*>.*?<\/h[2-3]>/i', '', $post->post_content);
-        $plain_text_content = wp_strip_all_tags($content_without_headings);
-        $plain_text_content = str_replace(array("\r", "\n", '&nbsp;', '—'), ' ', $plain_text_content);
-        $schema['articleBody'] = $plain_text_content;
-
         echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
 
-    // Check if it's the "About Us" page
     if (is_page('about-us')) {
+        $date_published = get_the_date('c');
+        $date_modified = get_the_modified_date('c');
+
         $about_us_schema = array(
             '@context' => 'http://schema.org',
-            '@type' => 'WebPage',
+            '@type' => 'AboutPage',
             'name' => 'About Us - With Each Mile',
             'url' => 'https://witheachmile.com/about-us/',
-            'description' => 'Learn more about the creators behind With Each Mile and their adventures.',
+            'datePublished' => $date_published,
+            'dateModified' => $date_modified,
+            'description' => 'Join Minerva & Sam as they travel the U.S. with their dogs, exploring National Parks, road tripping & sharing stories from every mile.',
             'publisher' => array(
                 '@type' => 'Organization',
                 'name' => 'With Each Mile',
                 'logo' => array(
                     '@type' => 'ImageObject',
-                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp'
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
                 ),
-                'sameAs' => get_social_profiles('default')  // Social profiles for publisher
+                'sameAs' => get_social_profiles('default')
             ),
             'creator' => array(
                 '@type' => 'Person',
@@ -167,11 +263,51 @@ function generate_schema() {
                 '@type' => 'Person',
                 'name' => 'Minerva',
                 'sameAs' => get_social_profiles('mbarrios')
-            ),
+            )
         );
+
         echo '<script type="application/ld+json">' . json_encode($about_us_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
     }
-}
 
-// Hook function into wp_head
-add_action('wp_head', 'generate_schema', 999);
+    // Check if it's the "Our Gear" page
+    if (is_page('our-gear')) {
+        global $post;
+
+        // Get the published and modified dates
+        $date_published = get_the_date('c', $post->ID);
+        $date_modified = get_the_modified_date('c', $post->ID);
+
+        // Generate schema for each product
+        $product_schemas = generate_schema_from_blocks($post->post_content);
+
+        // Output the product schemas
+        foreach ($product_schemas as $product_schema) {
+            echo '<script type="application/ld+json">' . json_encode($product_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+        }
+
+        // Output the "Our Gear" page schema
+        $our_gear_schema = array(
+            '@context' => 'http://schema.org',
+            '@type' => 'WebPage',
+            'name' => 'Our Gear - With Each Mile',
+            'url' => 'https://witheachmile.com/our-gear/',
+            'description' => 'Explore the gear we use and recommend for our adventures.',
+            'datePublished' => $date_published,
+            'dateModified' => $date_modified,
+            'publisher' => array(
+                '@type' => 'Organization',
+                'name' => 'With Each Mile',
+                'logo' => array(
+                    '@type' => 'ImageObject',
+                    'url' => 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp',
+                    'width' => 500,
+                    'height' => 500
+                ),
+                'sameAs' => get_social_profiles('default')
+            )
+        );
+
+        echo '<script type="application/ld+json">' . json_encode($our_gear_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+    }
+}
+add_action('wp_head', 'generate_schema');
