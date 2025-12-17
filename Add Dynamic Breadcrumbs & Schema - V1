@@ -1,0 +1,73 @@
+function custom_breadcrumbs_display($html, $block) {
+    if (is_single() && isset($block['attrs']['term']) && $block['attrs']['term'] === 'category') {
+        $tags = get_the_tags();
+        $national_park_tag = '';
+
+        // Find the tag that includes "National Park"
+        if ($tags) {
+            foreach ($tags as $tag) {
+                if (strpos($tag->name, 'National Park') !== false) {
+                    $national_park_tag = $tag;
+                    break; // Use the first matching tag
+                }
+            }
+        }
+
+        // Only modify breadcrumbs if a National Park tag exists
+        if ($national_park_tag) {
+            ob_start();
+
+            echo '<div class="breadcrumbs wp-block-post-terms" style="color: #37505D;">';
+            echo '<a href="' . esc_url(site_url('/national-parks/')) . '" style="color: inherit;">National Parks</a>';
+
+            // Link to the tag archive for the specific National Park
+            $park_url = esc_url(get_tag_link($national_park_tag->term_id));
+            echo ' / <a href="' . $park_url . '" style="color: inherit;">' . esc_html($national_park_tag->name) . '</a>';
+
+            echo '</div>';
+
+            // Generate structured data for breadcrumbs
+            $schema = [
+                "@context" => "https://schema.org",
+                "@type" => "BreadcrumbList",
+                "itemListElement" => [
+                    [
+                        "@type" => "ListItem",
+                        "position" => 1,
+                        "name" => "Home",
+                        "item" => esc_url(home_url('/'))
+                    ],
+                    [
+                        "@type" => "ListItem",
+                        "position" => 2,
+                        "name" => "National Parks",
+                        "item" => esc_url(site_url('/national-parks/'))
+                    ],
+                    [
+                        "@type" => "ListItem",
+                        "position" => 3,
+                        "name" => esc_html($national_park_tag->name),
+                        "item" => $park_url
+                    ]
+                ]
+            ];
+
+            // Add the current article to the schema
+            $schema["itemListElement"][] = [
+                "@type" => "ListItem",
+                "position" => count($schema["itemListElement"]) + 1,
+                "name" => get_the_title(),
+                "item" => esc_url(get_permalink())
+            ];
+
+            // Output JSON-LD schema
+            echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
+            return ob_get_clean(); // Replace the category display
+        }
+    }
+
+    return $html; // Return normal categories for non-National Park posts
+}
+
+add_filter('render_block_core/post-terms', 'custom_breadcrumbs_display', 10, 2);
