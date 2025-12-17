@@ -1,0 +1,74 @@
+add_action('wp_body_open', function() {
+    if (is_single()) {
+        echo '<div id="wpcode-progress-bar"></div>';
+    }
+});
+
+add_action('wp_head', function() {
+    if (is_single()) {
+        echo '<style>
+            #wpcode-progress-bar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background-color: #0d6efd;
+                z-index: 9999; /* Increased to stay above headers */
+                transform: scaleX(0);
+                transform-origin: left;
+                will-change: transform;
+                transition: transform 0.1s ease-out; /* Makes progress look smoother */
+            }
+            @media (min-width: 1025px) {
+                #wpcode-progress-bar { display: none; }
+            }
+        </style>';
+    }
+});
+
+add_action('wp_footer', function() {
+    if (is_single()) {
+        echo '<script>
+            (function() {
+                const bar = document.getElementById("wpcode-progress-bar");
+                const content = document.querySelector(".entry-content");
+                if (!bar || !content) return;
+
+                let contentBottom = 0;
+                let ticking = false;
+
+                const updateHeights = () => {
+                    contentBottom = content.offsetTop + content.offsetHeight;
+                };
+
+                const updateProgress = () => {
+                    const scroll = window.scrollY;
+                    const height = window.innerHeight;
+                    const max = Math.max(contentBottom - height, 1);
+                    const progress = Math.min(scroll / max, 1);
+                    bar.style.transform = `scaleX(${progress})`;
+                    ticking = false;
+                };
+
+                // Use ResizeObserver: Fires when images load or window resizes
+                const ro = new ResizeObserver(() => {
+                    updateHeights();
+                    updateProgress();
+                });
+                ro.observe(content);
+
+                window.addEventListener("scroll", () => {
+                    if (!ticking) {
+                        requestAnimationFrame(updateProgress);
+                        ticking = true;
+                    }
+                }, { passive: true });
+
+                // Initial run
+                updateHeights();
+                updateProgress();
+            })();
+        </script>';
+    }
+});
