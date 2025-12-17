@@ -1,0 +1,80 @@
+function custom_breadcrumbs_display($html, $block) {
+    // 1. Return early if this isn't the specific block or post type we need
+    if (!is_single() || !isset($block['attrs']['term']) || $block['attrs']['term'] !== 'category') {
+        return $html;
+    }
+
+    // 2. Efficiently fetch tags (get_the_tags is cached by WP, but we only loop once)
+    $tags = get_the_tags();
+    if (!$tags) {
+        return $html;
+    }
+
+    $national_park_tag = null;
+    foreach ($tags as $tag) {
+        // stripos is case-insensitive and faster than regex for simple matches
+        if (stripos($tag->name, 'National Park') !== false) {
+            $national_park_tag = $tag;
+            break;
+        }
+    }
+
+    // 3. Only proceed if we found the target tag
+    if ($national_park_tag) {
+        $park_url = get_tag_link($national_park_tag->term_id);
+        $park_name = $national_park_tag->name;
+        $site_home = home_url('/');
+        $parks_archive = site_url('/national-parks/');
+
+        // 4. Build HTML string directly (slightly more performant than ob_start for small snippets)
+        $output = sprintf(
+            '<div class="breadcrumbs wp-block-post-terms" style="color: #37505D;">' .
+            '<a href="%1$s" style="color: inherit;">National Parks</a> / ' .
+            '<a href="%2$s" style="color: inherit;">%3$s</a>' .
+            '</div>',
+            esc_url($parks_archive),
+            esc_url($park_url),
+            esc_html($park_name)
+        );
+
+        // 5. Build Schema
+        $schema = [
+            "@context" => "https://schema.org",
+            "@type" => "BreadcrumbList",
+            "itemListElement" => [
+                [
+                    "@type" => "ListItem",
+                    "position" => 1,
+                    "name" => "Home",
+                    "item" => $site_home
+                ],
+                [
+                    "@type" => "ListItem",
+                    "position" => 2,
+                    "name" => "National Parks",
+                    "item" => $parks_archive
+                ],
+                [
+                    "@type" => "ListItem",
+                    "position" => 3,
+                    "name" => $park_name,
+                    "item" => $park_url
+                ],
+                [
+                    "@type" => "ListItem",
+                    "position" => 4,
+                    "name" => get_the_title(),
+                    "item" => get_permalink()
+                ]
+            ]
+        ];
+
+        // 6. Append Schema to output
+        $output .= '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
+        return $output;
+    }
+
+    return $html;
+}
+add_filter('render_block_core/post-terms', 'custom_breadcrumbs_display', 10, 2);
