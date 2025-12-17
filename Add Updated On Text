@@ -1,13 +1,26 @@
-function custom_updated_date_format( $output ) {
-    if ( is_single() ) {
-        $publish_time = get_the_time( 'U' );
-        $modified_time = get_the_modified_time( 'U' );
+function custom_show_updated_date( $block_content, $block ) {
+    if ( 'core/post-date' === $block['blockName'] && is_single() ) {
+        // Only target the modified date block
+        if ( isset( $block['attrs']['className'] ) && str_contains( $block['attrs']['className'], 'wp-block-post-date__modified-date' ) ) {
+            $post_id = get_the_ID();
+            $publish_time = get_the_time( 'U', $post_id );
+            $modified_time = get_the_modified_time( 'U', $post_id );
 
-        if ( $modified_time != $publish_time && ( $modified_time - $publish_time ) > 86400 ) {
-            // Add "Updated on" before the modified date if more than 1 day passed
-            $output = 'Updated on ' . $output;
+            // Only show if modified more than 1 day after publishing
+            if ( $modified_time != $publish_time && ( $modified_time - $publish_time ) > 86400 ) {
+                // Inject "Updated on" before the date inside <time>, preserving all classes and HTML
+                $block_content = preg_replace(
+                    '/(<time\b[^>]*>)(.*?)(<\/time>)/i',
+                    '$1Updated on $2$3',
+                    $block_content,
+                    1
+                );
+            } else {
+                // Post not significantly updated — hide the block entirely
+                return '';
+            }
         }
     }
-    return $output;
+    return $block_content;
 }
-add_filter( 'get_the_modified_date', 'custom_updated_date_format' );
+add_filter( 'render_block', 'custom_show_updated_date', 10, 2 );
