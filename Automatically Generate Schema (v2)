@@ -1,17 +1,16 @@
-/**
- * 1. CENTRALIZED SOCIAL PROFILES
- */
 function get_social_profiles($slug) {
     $authors_social = array(
         'mbarrios' => array(
-            'https://bsky.app/profile/whyiambroke.blog',
-            'https://www.tiktok.com/@whyiambroke.blog',
+            'https://bsky.app/profile/betweentalesandtrails.com',
+            'https://www.tiktok.com/@betweentalesandtrails',
         ),
         'sfehling' => array(
             'https://www.facebook.com/SamuelCFehling',
             'https://www.instagram.com/dr.bean_phd/',
             'https://www.threads.net/@dr.bean_phd',
             'https://bsky.app/profile/nerdyspace.net',
+			'https://scholar.google.com/citations?user=fg-DwHMAAAAJ&hl=en',
+            'https://www.linkedin.com/in/samuel-fehling/',
             'https://github.com/badvue',
         ),
         'default' => array(
@@ -28,14 +27,13 @@ function get_social_profiles($slug) {
     return $authors_social[$slug] ?? $authors_social['default'];
 }
 
-/**
- * 2. HELPER: GET IMAGE OBJECT WITH DIMENSIONS
- */
 function get_schema_image_object($url) {
     if (!$url) return null;
     $image_path = parse_url($url, PHP_URL_PATH);
     $full_path = $_SERVER['DOCUMENT_ROOT'] . $image_path;
+
     $image_obj = array('@type' => 'ImageObject', 'url' => $url);
+
     if (file_exists($full_path)) {
         $size = @getimagesize($full_path);
         if ($size) {
@@ -43,12 +41,10 @@ function get_schema_image_object($url) {
             $image_obj['height'] = $size[1];
         }
     }
+
     return $image_obj;
 }
 
-/**
- * 3. PRODUCT PARSER FOR "OUR GEAR"
- */
 function generate_schema_from_blocks($content) {
     $dom = new DOMDocument();
     libxml_use_internal_errors(true);
@@ -62,6 +58,7 @@ function generate_schema_from_blocks($content) {
 
     foreach ($dom->getElementsByTagName('div') as $group) {
         if (strpos($group->getAttribute('class'), 'wp-block-group') === false) continue;
+
         $name = $description = $image_url = '';
         $rating_value = 5;
 
@@ -76,7 +73,9 @@ function generate_schema_from_blocks($content) {
             if (!$p->getElementsByTagName('strong')->length) {
                 $temp_p = clone $p;
                 $links = $temp_p->getElementsByTagName('a');
-                while($links->length > 0) { $links->item(0)->parentNode->removeChild($links->item(0)); }
+                while ($links->length > 0) {
+                    $links->item(0)->parentNode->removeChild($links->item(0));
+                }
                 $description = trim($temp_p->textContent);
                 break;
             }
@@ -100,7 +99,7 @@ function generate_schema_from_blocks($content) {
                 '@context' => 'https://schema.org',
                 '@type' => 'Product',
                 'name' => $name,
-                'image' => $image_url,
+                'image' => get_schema_image_object($image_url),
                 'description' => $description,
                 'review' => array(
                     '@type' => 'Review',
@@ -118,14 +117,10 @@ function generate_schema_from_blocks($content) {
     return $schemas;
 }
 
-/**
- * 4. MAIN OUTPUT FUNCTION
- */
 function generate_schema() {
     $org_id = 'https://witheachmile.com/#organization';
     $logo_url = 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp';
 
-    // Global Organization
     $org_schema = array(
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
@@ -149,19 +144,14 @@ function generate_schema() {
         echo '<script type="application/ld+json">' . wp_json_encode($web_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
     }
 
-    // AUTHOR ARCHIVE PAGES (ProfilePage) with mainEntityOfPage addition
     if (is_author()) {
         $author_id = get_queried_object_id();
         $author_slug = get_the_author_meta('user_nicename', $author_id);
         $author_url = get_author_posts_url($author_id);
-        
+
         $author_page_schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'ProfilePage',
-            'mainEntityOfPage' => array(
-                '@type' => 'WebPage',
-                '@id' => $author_url
-            ),
             'mainEntity' => array(
                 '@type' => 'Person',
                 '@id' => $author_url . '#person',
@@ -200,41 +190,43 @@ function generate_schema() {
                 'description' => get_the_author_meta('description', $author_id)
             ),
             'publisher' => array('@id' => $org_id),
-            'mainEntityOfPage' => array(
-                '@type' => 'WebPage', 
-                '@id' => $post_url,
-                'url' => $post_url
-            ),
-            'potentialAction' => array(
-                '@type' => 'ReadAction',
-                'target' => array(
-                    '@type' => 'EntryPoint',
-                    'url' => $post_url
-                )
-            )
+            'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => $post_url, 'url' => $post_url),
+            'potentialAction' => array('@type' => 'ReadAction', 'target' => array('@type' => 'EntryPoint', 'url' => $post_url))
         );
 
-        // Sections
+        preg_match_all('/<script[^>]*type=[\'"]application\/ld\+json[\'"][^>]*>(.*?)<\/script>/is', $post->post_content, $scripts);
+        if (!empty($scripts[1])) {
+            foreach ($scripts[1] as $json) {
+                $data = json_decode($json, true);
+                if ($data && isset($data['@type'], $data['@id']) && in_array($data['@type'], ['TouristAttraction', 'Place'])) {
+                    $blog_schema['about'] = array('@id' => $data['@id']);
+                    break;
+                }
+            }
+        }
+
         preg_match_all('/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $post->post_content, $matches);
         if (!empty($matches[1])) {
             $blog_schema['articleSection'] = array_map('wp_strip_all_tags', $matches[1]);
         }
 
-        // Multi-image scanning with dimensions
-        $image_objects = [];
+        $all_images = [];
         $feat = get_the_post_thumbnail_url($post->ID, 'full');
-        if ($feat) {
-            $image_objects[] = get_schema_image_object($feat);
-        }
+        if ($feat) $all_images[] = $feat;
+
         preg_match_all('/<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>/i', $post->post_content, $img_matches);
         if (!empty($img_matches[1])) {
             foreach (array_unique($img_matches[1]) as $img_url) {
-                if ($img_url !== $feat) {
-                    $obj = get_schema_image_object($img_url);
-                    if ($obj) $image_objects[] = $obj;
-                }
+                if ($img_url !== $feat) $all_images[] = $img_url;
             }
         }
+
+        $image_objects = [];
+        foreach ($all_images as $img_url) {
+            $obj = get_schema_image_object($img_url);
+            if ($obj) $image_objects[] = $obj;
+        }
+
         if ($image_objects) $blog_schema['image'] = $image_objects;
 
         echo '<script type="application/ld+json">' . wp_json_encode($blog_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
@@ -270,6 +262,7 @@ function generate_schema() {
             'dateModified' => get_the_modified_date('c')
         );
         echo '<script type="application/ld+json">' . wp_json_encode($gear_page_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+
         foreach (generate_schema_from_blocks($post->post_content) as $product) {
             echo '<script type="application/ld+json">' . wp_json_encode($product, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
         }
