@@ -1,0 +1,121 @@
+function add_all_meta_tags() {
+    global $post;
+
+    // Default values
+    $default_image_url = "https://witheachmile.com/wp-content/uploads/2025/01/With-Each-Mile-Sam-Hiking-Obstruction-Point.webp";
+    $default_description = "Minerva, Sam, and their pups, Toby & Lily, share hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
+    $og_type = 'website';
+    $og_title = get_bloginfo( 'name' );
+    $og_url = esc_url( home_url( '/' ) );
+    $og_description = $default_description;
+    $image_url = '';
+    $image_width = '';
+    $image_height = '';
+    $limit_length = false;
+
+    // Determine description and OG details per page type
+    if ( is_home() || is_front_page() ) {
+        $meta_description = $default_description;
+        $og_description = $default_description;
+        $og_type = 'website';
+        $og_url = esc_url( home_url( '/' ) );
+    } elseif ( is_single() || is_page() ) {
+        $og_title = get_the_title();
+        $og_url = get_permalink();
+        $og_type = is_singular( 'post' ) ? 'article' : 'website';
+
+        if ( is_page() ) {
+            $meta_description = get_post_meta( $post->ID, 'description', true );
+        }
+
+        if ( empty( $meta_description ) && ! empty( $post->post_excerpt ) ) {
+            $meta_description = $post->post_excerpt;
+        }
+
+        if ( empty( $meta_description ) ) {
+            $meta_description = $post->post_content;
+            $limit_length = true;
+        }
+
+        $meta_description = strip_shortcodes( strip_tags( $meta_description ) );
+        $og_description = $meta_description;
+
+        // Use featured image if available
+        if ( has_post_thumbnail( $post->ID ) ) {
+            $thumbnail_id = get_post_thumbnail_id( $post->ID );
+            $thumbnail_src = wp_get_attachment_image_src( $thumbnail_id, 'full' );
+            $image_meta = wp_get_attachment_metadata( $thumbnail_id );
+            if ( isset( $thumbnail_src[0] ) ) {
+                $image_url = esc_url( $thumbnail_src[0] );
+                $image_width = $image_meta['width'] ?? '';
+                $image_height = $image_meta['height'] ?? '';
+            }
+        }
+    } elseif ( is_author() ) {
+        $author_name = get_the_author_meta( 'display_name' );
+        $meta_description = "$author_name writes about hikes, road trips, and travel tips as they balance a 9-to-5 with a passion for the outdoors.";
+        $og_description = $meta_description;
+        $og_url = get_author_posts_url( get_the_author_meta( 'ID' ) );
+    } elseif ( is_category() || is_tag() ) {
+        $term_description = term_description();
+        $term_name = single_term_title( '', false );
+        $og_url = is_category() ? get_category_link( get_queried_object_id() ) : get_tag_link( get_queried_object_id() );
+
+        if ( ! empty( $term_description ) ) {
+            $meta_description = strip_tags( $term_description );
+            $og_description = $meta_description;
+            $limit_length = true;
+        } else {
+            if ( is_category() ) {
+                $meta_description = "Explore $term_name with Minerva and Sam—hikes, road trips, and adventures across this region for outdoor lovers.";
+                $og_description = "$term_name - Explore hikes, road trips, and travel tips from Minerva and Sam as they balance 9-to-5 jobs with a love for adventure.";
+            } else { // tag
+                $meta_description = "Discover $term_name with Minerva & Sam—hidden trails, scenic drives, and travel tips for your next adventure.";
+                $og_description = "Discover more about $term_name, including hikes, road trips, and travel tips from Minerva & Sam as they balance 9-to-5 jobs with a love for adventure.";
+            }
+        }
+    } else {
+        $meta_description = $default_description;
+        $og_description = $default_description;
+    }
+
+    // Clean up whitespace and limit length if needed
+    $meta_description = preg_replace( '/\s+/', ' ', trim( $meta_description ) );
+    $og_description = preg_replace( '/\s+/', ' ', trim( $og_description ) );
+    if ( $limit_length ) {
+        $meta_description = mb_strimwidth( $meta_description, 0, 160, '...' );
+        $og_description = mb_strimwidth( $og_description, 0, 160, '...' );
+    }
+
+    // Fallback for OG image
+    if ( empty( $image_url ) ) {
+        $image_url = esc_url( $default_image_url );
+        $image_editor = wp_get_image_editor( $default_image_url );
+        if ( ! is_wp_error( $image_editor ) ) {
+            $image_meta = $image_editor->get_size();
+            $image_width = $image_meta['width'] ?? '';
+            $image_height = $image_meta['height'] ?? '';
+        }
+    }
+
+    // Output standard meta description
+    echo '<meta name="description" content="' . esc_attr( $meta_description ) . '">' . PHP_EOL;
+
+    // Output Open Graph & Twitter meta
+    echo '<meta property="og:title" content="' . esc_attr( $og_title ) . '"/>';
+    echo '<meta property="og:type" content="' . esc_attr( $og_type ) . '"/>';
+    echo '<meta property="og:url" content="' . esc_url( $og_url ) . '"/>';
+    echo '<meta property="og:site_name" content="' . esc_attr( get_bloginfo( 'name' ) ) . '"/>';
+    echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '"/>';
+    if ( ! empty( $image_url ) ) {
+        echo '<meta property="og:image" content="' . esc_url( $image_url ) . '"/>';
+        if ( ! empty( $image_width ) ) echo '<meta property="og:image:width" content="' . esc_attr( $image_width ) . '"/>';
+        if ( ! empty( $image_height ) ) echo '<meta property="og:image:height" content="' . esc_attr( $image_height ) . '"/>';
+        echo '<meta name="twitter:image" content="' . esc_url( $image_url ) . '"/>';
+    }
+    echo '<meta name="twitter:card" content="summary_large_image"/>';
+    echo '<meta name="twitter:title" content="' . esc_attr( $og_title ) . '"/>';
+    echo '<meta name="twitter:description" content="' . esc_attr( $og_description ) . '"/>';
+    echo '<meta property="og:locale" content="en_US"/>';
+}
+add_action( 'wp_head', 'add_all_meta_tags', 4 );
