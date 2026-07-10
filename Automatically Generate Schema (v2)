@@ -8,7 +8,7 @@ function get_social_profiles($slug) {
             'https://www.facebook.com/SamuelCFehling',
             'https://www.instagram.com/dr.bean_phd/',
             'https://www.threads.net/@dr.bean_phd',
-            'https://bsky.app/profile/nerdyspace.net',
+            'https://bsky.app/profile/samuelfehling.com',
 			'https://scholar.google.com/citations?user=fg-DwHMAAAAJ&hl=en',
             'https://www.linkedin.com/in/samuel-fehling/',
             'https://github.com/badvue',
@@ -21,7 +21,9 @@ function get_social_profiles($slug) {
             'https://www.youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
             'https://flipboard.com/@WithEachMile',
+			'https://surf.social/profile/witheachmile',
             'https://www.facebook.com/WithEachMile/',
+			'https://www.reddit.com/user/WithEachMile/',
         )
     );
     return $authors_social[$slug] ?? $authors_social['default'];
@@ -53,39 +55,41 @@ function generate_schema_from_blocks($content) {
     libxml_clear_errors();
 
     $schemas = [];
+    $processed_names = []; // Track names to prevent duplicates
     $ratings_raw = get_post_meta(get_the_ID(), 'rating', true);
     $ratings_lines = explode("\n", $ratings_raw);
 
     foreach ($dom->getElementsByTagName('div') as $group) {
         if (strpos($group->getAttribute('class'), 'wp-block-group') === false) continue;
 
-        $name = $description = $image_url = '';
+        // Look for the H3 title
+        $h3s = $group->getElementsByTagName('h3');
+        if ($h3s->length === 0) continue;
+        
+        $name = trim($h3s->item(0)->textContent);
+        
+        // Skip if we already handled this product or if name is empty
+        if (empty($name) || in_array($name, $processed_names)) continue;
+
+        $description = $image_url = '';
         $rating_value = 5;
 
-        foreach ($group->getElementsByTagName('h3') as $h3) {
-            if ($h3->getElementsByTagName('strong')->length > 0) {
-                $name = trim($h3->textContent);
-                break;
-            }
-        }
-
+        // Find the first paragraph for the description
         foreach ($group->getElementsByTagName('p') as $p) {
-            if (!$p->getElementsByTagName('strong')->length) {
-                $temp_p = clone $p;
-                $links = $temp_p->getElementsByTagName('a');
-                while ($links->length > 0) {
-                    $links->item(0)->parentNode->removeChild($links->item(0));
-                }
-                $description = trim($temp_p->textContent);
+            $text = trim($p->textContent);
+            if (!empty($text)) {
+                $description = $text;
                 break;
             }
         }
 
+        // Find the image
         foreach ($group->getElementsByTagName('img') as $img) {
             $image_url = $img->getAttribute('src');
             break;
         }
 
+        // Match rating from post meta
         foreach ($ratings_lines as $line) {
             if ($name && strpos($line, $name) !== false) {
                 $parts = explode(' ', trim($line));
@@ -95,6 +99,7 @@ function generate_schema_from_blocks($content) {
         }
 
         if ($name && $description && $image_url) {
+            $processed_names[] = $name;
             $schemas[] = array(
                 '@context' => 'https://schema.org',
                 '@type' => 'Product',
@@ -119,7 +124,7 @@ function generate_schema_from_blocks($content) {
 
 function generate_schema() {
     $org_id = 'https://witheachmile.com/#organization';
-    $logo_url = 'https://witheachmile.com/wp-content/uploads/2024/03/Logo-Full-Size.webp';
+    $logo_url = 'https://witheachmile.com/wp-content/uploads/2026/03/With-Each-Mile-Full-Size.webp';
 
     $org_schema = array(
         '@context' => 'https://schema.org',
