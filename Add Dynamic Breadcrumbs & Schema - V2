@@ -1,80 +1,129 @@
 function custom_breadcrumbs_display($html, $block) {
-    // 1. Return early if this isn't the specific block or post type we need
+
     if (!is_single() || !isset($block['attrs']['term']) || $block['attrs']['term'] !== 'category') {
         return $html;
     }
 
-    // 2. Efficiently fetch tags (get_the_tags is cached by WP, but we only loop once)
     $tags = get_the_tags();
     if (!$tags) {
         return $html;
     }
 
-    $national_park_tag = null;
+    $site_home = home_url('/');
+    $trail = null;
+
+    /*
+     * PRIORITY 1: National Park
+     */
     foreach ($tags as $tag) {
-        // stripos is case-insensitive and faster than regex for simple matches
         if (stripos($tag->name, 'National Park') !== false) {
-            $national_park_tag = $tag;
+
+            $trail = [
+                'type' => 'national_park',
+                'parent_label' => 'National Parks',
+                'parent_url' => site_url('/national-parks/'),
+                'child_label' => $tag->name,
+                'child_url' => get_tag_link($tag->term_id)
+            ];
             break;
         }
     }
 
-    // 3. Only proceed if we found the target tag
-    if ($national_park_tag) {
-        $park_url = get_tag_link($national_park_tag->term_id);
-        $park_name = $national_park_tag->name;
-        $site_home = home_url('/');
-        $parks_archive = site_url('/national-parks/');
+    /*
+     * PRIORITY 2: State
+     */
+    if (!$trail) {
 
-        // 4. Build HTML string directly (slightly more performant than ob_start for small snippets)
-        $output = sprintf(
-            '<div class="breadcrumbs wp-block-post-terms" style="color: #37505D;">' .
-            '<a href="%1$s" style="color: inherit;">National Parks</a> / ' .
-            '<a href="%2$s" style="color: inherit;">%3$s</a>' .
-            '</div>',
-            esc_url($parks_archive),
-            esc_url($park_url),
-            esc_html($park_name)
-        );
-
-        // 5. Build Schema
-        $schema = [
-            "@context" => "https://schema.org",
-            "@type" => "BreadcrumbList",
-            "itemListElement" => [
-                [
-                    "@type" => "ListItem",
-                    "position" => 1,
-                    "name" => "Home",
-                    "item" => $site_home
-                ],
-                [
-                    "@type" => "ListItem",
-                    "position" => 2,
-                    "name" => "National Parks",
-                    "item" => $parks_archive
-                ],
-                [
-                    "@type" => "ListItem",
-                    "position" => 3,
-                    "name" => $park_name,
-                    "item" => $park_url
-                ],
-                [
-                    "@type" => "ListItem",
-                    "position" => 4,
-                    "name" => get_the_title(),
-                    "item" => get_permalink()
-                ]
-            ]
+        $states = [
+            'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
+            'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
+            'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
+            'Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
+            'New Hampshire','New Jersey','New Mexico','New York','North Carolina',
+            'North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
+            'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
+            'Virginia','Washington','West Virginia','Wisconsin','Wyoming'
         ];
 
-        // 6. Append Schema to output
-        $output .= '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+        foreach ($tags as $tag) {
+            if (in_array($tag->name, $states, true)) {
 
-        return $output;
+                $trail = [
+                    'type' => 'state',
+                    'parent_label' => 'United States',
+                    'parent_url' => home_url('/tag/united-states/'),
+                    'child_label' => $tag->name,
+                    'child_url' => get_tag_link($tag->term_id)
+                ];
+                break;
+            }
+        }
     }
 
-    return $html;
+    /*
+     * PRIORITY 3: fallback category
+     */
+    if (!$trail) {
+        return $html;
+    }
+
+    /*
+     * Shared styling (only defined once)
+     */
+    $wrapper_start = '<div class="breadcrumbs wp-block-post-terms" style="color:#37505D;">';
+    $wrapper_end = '</div>';
+
+    /*
+     * Build HTML
+     */
+    $output = $wrapper_start .
+        '<a href="' . esc_url($trail['parent_url']) . '" style="color:inherit;">' .
+        esc_html($trail['parent_label']) .
+        '</a> / ' .
+        '<a href="' . esc_url($trail['child_url']) . '" style="color:inherit;">' .
+        esc_html($trail['child_label']) .
+        '</a>' .
+        $wrapper_end;
+
+    /*
+     * Build schema (single template)
+     */
+    $schema = [
+        "@context" => "https://schema.org",
+        "@type" => "BreadcrumbList",
+        "itemListElement" => [
+            [
+                "@type" => "ListItem",
+                "position" => 1,
+                "name" => "Home",
+                "item" => $site_home
+            ],
+            [
+                "@type" => "ListItem",
+                "position" => 2,
+                "name" => $trail['parent_label'],
+                "item" => $trail['parent_url']
+            ],
+            [
+                "@type" => "ListItem",
+                "position" => 3,
+                "name" => $trail['child_label'],
+                "item" => $trail['child_url']
+            ],
+            [
+                "@type" => "ListItem",
+                "position" => 4,
+                "name" => get_the_title(),
+                "item" => get_permalink()
+            ]
+        ]
+    ];
+
+    $output .= '<script type="application/ld+json">' .
+        wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) .
+        '</script>';
+
+    return $output;
 }
+
 add_filter('render_block_core/post-terms', 'custom_breadcrumbs_display', 10, 2);
