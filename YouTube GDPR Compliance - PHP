@@ -1,0 +1,194 @@
+// This code works alongside Cookieyes CMS and the native WordPress YouTube embed function to make it GDPR compliant
+
+// Securely neutralize YouTube iframe src before the browser receives it
+add_filter('render_block', function($block_content, $block) {
+    if (($block['blockName'] ?? '') !== 'core/embed' && strpos($block_content, 'wp-block-embed-youtube') === false) {
+        return $block_content;
+    }
+
+    // Only touch blocks containing explicit standard or privacy-enhanced YouTube references
+    if (
+        strpos($block_content, 'youtube.com') === false && 
+        strpos($block_content, 'youtu.be') === false &&
+        strpos($block_content, 'youtube-nocookie.com') === false
+    ) {
+        return $block_content;
+    }
+
+    // Safely rewrite ONLY YouTube iframe src attributes using a strict regex boundary match
+    return preg_replace(
+        '/<iframe([^>]+)\ssrc=(["\'])(https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)[^"\']+)\2/i',
+        '<iframe$1 data-src=$2$3$2',
+        $block_content
+    );
+}, 99, 2);
+
+// Output JS in footer
+add_action('wp_footer', function() {
+?>
+<script>
+(function () {
+
+  function getVideoInfo(url) {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      if ((parts[0] === 'embed' || parts[0] === 'shorts') && parts[1]) {
+        return {
+          id: parts[1].split('?')[0],
+          isShort: parts[0] === 'shorts',
+          host: u.host
+        };
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function getPaddingFromIframe(iframe, info) {
+    if (info && info.isShort) return '177.7778%'; // True vertical 9:16 aspect ratio spacing
+
+    const w = parseFloat(iframe.getAttribute('width'))  || 560;
+    const h = parseFloat(iframe.getAttribute('height')) || 315;
+    return ((h / w) * 100).toFixed(4) + '%';
+  }
+
+  function convertEmbed(wrapper) {
+    if (wrapper.dataset.gdprConverted) return;
+    wrapper.dataset.gdprConverted = 'true';
+
+    const iframe = wrapper.querySelector('iframe');
+    if (!iframe) return;
+
+    const originalSrc = iframe.getAttribute('data-src') || '';
+    const info = getVideoInfo(originalSrc);
+    if (!info) return;
+
+    const paddingBottom = getPaddingFromIframe(iframe, info);
+
+    wrapper.style.position = 'relative';
+    wrapper.style.paddingBottom = paddingBottom;
+    wrapper.style.height = '0';
+    wrapper.style.background = '#000';
+    wrapper.style.overflow = 'hidden';
+    wrapper.style.borderRadius = '4px';
+
+    // Neutralize visibility, interactions, and accessibility tree scans completely pre-consent
+    iframe.style.visibility = 'hidden';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.setAttribute('tabindex', '-1');
+
+    // Strip conflicting native responsive aspect classes to protect vertical Shorts layouts
+    if (info.isShort) {
+      const figure = wrapper.closest('figure.wp-block-embed');
+      if (figure) {
+        figure.classList.remove('wp-embed-aspect-16-9');
+        figure.classList.remove('wp-has-aspect-ratio');
+        
+        figure.style.setProperty('max-width', '340px', 'important');
+        figure.style.setProperty('margin', '1.5rem auto', 'important');
+      }
+    }
+
+    // Force outbound links to use the main youtube domain instead of an invalid nocookie url string
+    const cleanPublicHost = info.host.includes('youtube-nocookie.com') ? 'www.youtube.com' : info.host;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'youtube-gdpr-overlay';
+    overlay.style.cssText = `position:absolute;top:0;left:0;right:0;bottom:0;color:#fff;
+                             display:flex;flex-direction:column;align-items:center;
+                             justify-content:center;text-align:center;padding:1em;gap:0.5em;z-index:2;`;
+
+    overlay.innerHTML = `
+      <div>YouTube needs advertisement cookies to load. These cookies cover both our site and the embedded content.</div>
+      <div style="font-size:0.85em;color:#fff;margin:0.25em 0;">Or</div>
+      <a href="${info.isShort ? `https://${cleanPublicHost}/shorts/${info.id}` : `https://${cleanPublicHost}/watch?v=${info.id}`}"
+         class="youtube-link" target="_blank" rel="noopener noreferrer"
+         style="color:#66ccff;text-decoration:underline;font-weight:500;">Watch on YouTube</a>`;
+
+    wrapper.appendChild(overlay);
+    wrapper.dataset.videoId = info.id;
+    wrapper.dataset.origSrc = originalSrc;
+  }
+
+  function embedOne(wrapper) {
+    const iframe = wrapper.querySelector('iframe');
+    const overlay = wrapper.querySelector('.youtube-gdpr-overlay');
+    const src = wrapper.dataset.origSrc;
+    if (!iframe || !src) return;
+
+    let targetSrc = src;
+    const info = getVideoInfo(src);
+    if (info && info.isShort && !src.includes('/embed/')) {
+      targetSrc = `https://${info.host}/embed/${info.id}`;
+    }
+    
+    // Fully restore active execution states, styling attributes, and structural values
+    iframe.src = targetSrc;
+    iframe.style.position = 'absolute';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'visible';
+    iframe.style.opacity = '1';
+    iframe.style.pointerEvents = 'auto';
+
+    iframe.removeAttribute('data-src');
+    iframe.removeAttribute('aria-hidden');
+    iframe.removeAttribute('tabindex');
+
+    if (overlay) {
+      overlay.remove();
+    }
+  }
+
+  function embedAll() {
+    document.querySelectorAll('.wp-block-embed__wrapper[data-gdpr-converted="true"]').forEach(embedOne);
+  }
+
+  function checkAndEmbed() {
+    if (typeof getCkyConsent !== 'function') return false;
+    const consent = getCkyConsent();
+    if (consent.categories && consent.categories.advertisement) {
+      embedAll();
+      return true;
+    }
+    return false;
+  }
+
+  function waitForConsentAndEmbed() {
+    if (checkAndEmbed()) return;
+    
+    const interval = setInterval(() => {
+      if (checkAndEmbed()) clearInterval(interval);
+    }, 500);
+
+    document.addEventListener('cookieyes_consent_update', function (e) {
+      if (e.detail && e.detail.accepted && e.detail.accepted.includes('advertisement')) {
+        embedAll();
+        clearInterval(interval);
+      }
+    });
+  }
+
+  function init() {
+    document.querySelectorAll('.wp-block-embed-youtube .wp-block-embed__wrapper')
+            .forEach(convertEmbed);
+
+    waitForConsentAndEmbed();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+<?php
+}, 100);
