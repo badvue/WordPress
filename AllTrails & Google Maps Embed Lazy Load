@@ -1,12 +1,94 @@
-// This code adds Lazy Loading to embedded AllTrails maps or Google Maps. Code also adds, "Loading..." for slower to load devices while the iframe loads.
-// AllTrails Lazy Load
-<div class="embed-container alltrails-container">
-    <div class="placeholder">Loading AllTrails Map...</div>
-    <iframe class="alltrails" src="https://www.alltrails.com/link" frameborder="0" scrolling="no" title="AllTrails Map" loading="lazy" onload="this.previousElementSibling.style.display='none';"></iframe>
-</div>
+// Google Maps GDPR Compliance - JS
 
-// Google Maps Lazy Load
-<div class="embed-container alltrails-container">
-    <div class="placeholder">Loading Google Maps...</div>
-    <iframe src="https://www.google.com/maps/d/link" style="border:0" referrerpolicy="no-referrer-when-downgrade" loading="lazy" onload="this.previousElementSibling.style.display='none';"></iframe>
-</div>
+function embedGoogleMaps() {
+  document.querySelectorAll('.googlemaps-gdpr-placeholder').forEach(el => {
+    const mapId = el.getAttribute('data-map-id');
+    if (!mapId) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.google.com/maps/d/embed?mid=${mapId}&ehbc=2E312F&noprof=1`;
+    iframe.title = "Google My Map";
+    iframe.frameBorder = "0";
+    iframe.loading = "lazy";
+    iframe.referrerPolicy = "no-referrer-when-downgrade";
+    iframe.style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;";
+    
+    el.innerHTML = '';
+    el.appendChild(iframe);
+  });
+}
+
+function setGoogleMapsLinks() {
+  document.querySelectorAll('.googlemaps-gdpr-placeholder').forEach(el => {
+    const mapId = el.getAttribute('data-map-id');
+    if (!mapId) return;
+    const link = el.querySelector('.googlemaps-link');
+    if (link) {
+      link.href = `https://www.google.com/maps/d/edit?mid=${mapId}&usp=sharing`;
+    }
+  });
+}
+
+function waitForConsentAndEmbedGoogleMaps() {
+  const interval = setInterval(() => {
+    if (typeof getCkyConsent === 'function') {
+      const consent = getCkyConsent();
+      if (consent.isUserActionCompleted && consent.categories.advertisement) {
+        embedGoogleMaps();
+        clearInterval(interval);
+      }
+    }
+  }, 500);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setGoogleMapsLinks();
+  waitForConsentAndEmbedGoogleMaps();
+});
+
+// AllTrails GDPR Compliance - JS
+
+function setAllTrailsLinks() {
+  document.querySelectorAll('.alltrails-gdpr-placeholder').forEach(el => {
+    const widgetUrl = el.getAttribute('data-map-url');
+    if (!widgetUrl) return;
+    let trailUrl = widgetUrl.replace('/widget', '').split('?')[0];
+    const link = el.querySelector('.alltrails-link');
+    if (link) {
+      link.href = trailUrl;
+    }
+  });
+}
+
+function embedAllTrailsMaps() {
+  document.querySelectorAll('.alltrails-gdpr-placeholder').forEach(el => {
+    const mapUrl = el.getAttribute('data-map-url');
+    if (!mapUrl) return;
+    const iframe = document.createElement('iframe');
+    iframe.src = mapUrl;
+    iframe.title = "AllTrails Map";
+    iframe.frameBorder = "0";
+    iframe.scrolling = "no";
+    iframe.loading = "lazy";
+    iframe.style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;";
+    el.innerHTML = '';
+    el.appendChild(iframe);
+  });
+}
+
+function waitForConsentAndEmbedAllTrails() {
+  const interval = setInterval(() => {
+    if (typeof getCkyConsent === 'function') {
+      const consent = getCkyConsent();
+      if (consent.isUserActionCompleted && consent.categories.analytics) {
+        embedAllTrailsMaps();
+        clearInterval(interval);
+      }
+    }
+  }, 500);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setAllTrailsLinks();
+  waitForConsentAndEmbedAllTrails();
+});
