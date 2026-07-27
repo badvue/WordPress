@@ -3,18 +3,18 @@ function add_all_meta_tags() {
 
     // 1. Setup Defaults
     $default_image_url = "https://witheachmile.com/wp-content/uploads/2026/03/With-Each-Mile.webp";
-    $default_description = "Minerva, Sam, and their pups, Toby & Lily, share hikes, road trips, and travel tips as they balance 9-to-5 jobs with a love for adventure.";
+    $default_description = "Minerva, Sam and their pups, Toby & Lily, share hikes, road trips and travel tips as they balance 9-to-5 jobs with a love for adventure.";
 
     $site_name = get_bloginfo('name');
     $publisher_url = "https://www.facebook.com/WithEachMile/";
 
     $og_type = 'website';
     $og_title = ''; 
-    $og_url = esc_url(home_url('/'));
+    $og_url = home_url('/'); // Raw until output
     $og_description = ''; 
     $meta_description = ''; 
 
-    $image_url = '';
+    $image_url = ''; // Raw until output
     $image_width = '';
     $image_height = '';
     $image_alt = '';
@@ -68,7 +68,7 @@ function add_all_meta_tags() {
             $image_meta = wp_get_attachment_metadata($thumbnail_id);
 
             if (isset($thumbnail_src[0])) {
-                $image_url = esc_url($thumbnail_src[0]);
+                $image_url = $thumbnail_src[0]; // Keep raw until output
                 $image_width = $image_meta['width'] ?? '';
                 $image_height = $image_meta['height'] ?? '';
                 $image_alt = get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true);
@@ -78,46 +78,57 @@ function add_all_meta_tags() {
     } elseif (is_author()) {
         $author_name = get_the_author_meta('display_name');
         $og_title = $author_name;
-        $meta_description = "$author_name writes about hikes, road trips, and travel tips.";
+        $meta_description = "$author_name writes about hikes, road trips and travel tips.";
         $og_description = $meta_description;
         $og_url = get_author_posts_url(get_the_author_meta('ID'));
 
     } elseif (is_category() || is_tag() || is_tax()) {
         $term = get_queried_object();
         $term_name = $term->name;
-        $term_description = term_description();
+        
+        // Optimized function call while preserving core filters
+        $term_description = term_description($term->term_id); 
         
         $og_title = $term_name;
-        $og_url = get_term_link($term);
+        
+        $term_link = get_term_link($term);
+        if (!is_wp_error($term_link)) {
+            $og_url = $term_link;
+        }
 
         if (!empty($term_description)) {
             $meta_description = strip_tags($term_description);
             $og_description = $meta_description;
             $limit_length = true;
         } else {
-            $meta_description = "Explore " . $term_name . "—hikes, road trips, and adventures for outdoor lovers.";
+            $meta_description = "Explore " . $term_name . "—hikes, road trips and adventures for outdoor lovers.";
             $og_description = $meta_description;
         }
+    }
+
+    // Fix for Paginated Archives using native WordPress API
+    $paged = max(1, get_query_var('paged'), get_query_var('page'));
+    if ($paged > 1 && !is_singular()) {
+        $og_url = get_pagenum_link($paged);
     }
 
     // 3. FINAL FALLBACKS & FORMATTING
     if (empty($meta_description)) { $meta_description = $default_description; }
     if (empty($og_description))   { $og_description = $meta_description; }
-    
-    $seo_title = (!empty($og_title) && $og_title !== $site_name) ? $og_title . ' | ' . $site_name : $site_name;
 
     $meta_description = preg_replace('/\s+/', ' ', trim($meta_description));
     $og_description   = preg_replace('/\s+/', ' ', trim($og_description));
 
-    if ($limit_length || strlen($meta_description) > 160) {
+    // Multibyte-aware string length checks
+    if ($limit_length || mb_strlen($meta_description) > 160) {
         $meta_description = mb_strimwidth($meta_description, 0, 160, '...');
     }
-    if (strlen($og_description) > 230) {
+    if (mb_strlen($og_description) > 230) {
         $og_description = mb_strimwidth($og_description, 0, 230, '...');
     }
 
     if (empty($image_url)) {
-        $image_url = esc_url($default_image_url);
+        $image_url = $default_image_url; // Keep raw until output
         $upload_dir = wp_upload_dir();
         $default_image_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $default_image_url);
         $image_editor = wp_get_image_editor($default_image_path);
