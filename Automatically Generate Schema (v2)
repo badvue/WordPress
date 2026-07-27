@@ -1,7 +1,8 @@
-function get_social_profiles($slug) {
+function wem_get_social_profiles($slug) {
     $authors_social = array(
         'mbarrios' => array(
             'https://bsky.app/profile/betweentalesandtrails.com',
+            'https://youtube.com/@Betweentalesandtrails',
             'https://www.tiktok.com/@betweentalesandtrails',
         ),
         'sfehling' => array(
@@ -9,8 +10,9 @@ function get_social_profiles($slug) {
             'https://www.instagram.com/dr.bean_phd/',
             'https://www.threads.net/@dr.bean_phd',
             'https://bsky.app/profile/samuelfehling.com',
-			'https://scholar.google.com/citations?user=fg-DwHMAAAAJ&hl=en',
+            'https://scholar.google.com/citations?user=fg-DwHMAAAAJ',
             'https://www.linkedin.com/in/samuel-fehling/',
+            'https://www.wikidata.org/wiki/Q140596091',
             'https://github.com/badvue',
         ),
         'default' => array(
@@ -18,18 +20,27 @@ function get_social_profiles($slug) {
             'https://www.threads.net/@witheachmile',
             'https://www.tiktok.com/@witheachmile',
             'https://www.pinterest.com/WithEachMile/',
-            'https://www.youtube.com/@WithEachMile',
+            'https://youtube.com/@WithEachMile',
             'https://bsky.app/profile/witheachmile.com',
             'https://flipboard.com/@WithEachMile',
-			'https://surf.social/profile/witheachmile',
+            'https://surf.social/profile/witheachmile',
             'https://www.facebook.com/WithEachMile/',
-			'https://www.reddit.com/user/WithEachMile/',
+            'https://www.reddit.com/user/WithEachMile/',
         )
     );
     return $authors_social[$slug] ?? $authors_social['default'];
 }
 
-function get_schema_image_object($url) {
+function wem_get_canonical_author_name($slug) {
+    $authors_names = array(
+        'sfehling' => 'Samuel Fehling',
+        'mbarrios' => 'Minerva Barrios',
+    );
+
+    return $authors_names[$slug] ?? '';
+}
+
+function wem_get_schema_image_object($url) {
     if (!$url) return null;
     $image_path = parse_url($url, PHP_URL_PATH);
     $full_path = $_SERVER['DOCUMENT_ROOT'] . $image_path;
@@ -47,7 +58,7 @@ function get_schema_image_object($url) {
     return $image_obj;
 }
 
-function generate_schema_from_blocks($content) {
+function wem_generate_schema_from_blocks($content) {
     $dom = new DOMDocument();
     libxml_use_internal_errors(true);
     $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
@@ -55,26 +66,22 @@ function generate_schema_from_blocks($content) {
     libxml_clear_errors();
 
     $schemas = [];
-    $processed_names = []; // Track names to prevent duplicates
+    $processed_names = [];
     $ratings_raw = get_post_meta(get_the_ID(), 'rating', true);
     $ratings_lines = explode("\n", $ratings_raw);
 
     foreach ($dom->getElementsByTagName('div') as $group) {
         if (strpos($group->getAttribute('class'), 'wp-block-group') === false) continue;
 
-        // Look for the H3 title
         $h3s = $group->getElementsByTagName('h3');
         if ($h3s->length === 0) continue;
         
         $name = trim($h3s->item(0)->textContent);
-        
-        // Skip if we already handled this product or if name is empty
         if (empty($name) || in_array($name, $processed_names)) continue;
 
         $description = $image_url = '';
         $rating_value = 5;
 
-        // Find the first paragraph for the description
         foreach ($group->getElementsByTagName('p') as $p) {
             $text = trim($p->textContent);
             if (!empty($text)) {
@@ -83,13 +90,11 @@ function generate_schema_from_blocks($content) {
             }
         }
 
-        // Find the image
         foreach ($group->getElementsByTagName('img') as $img) {
             $image_url = $img->getAttribute('src');
             break;
         }
 
-        // Match rating from post meta
         foreach ($ratings_lines as $line) {
             if ($name && strpos($line, $name) !== false) {
                 $parts = explode(' ', trim($line));
@@ -104,7 +109,7 @@ function generate_schema_from_blocks($content) {
                 '@context' => 'https://schema.org',
                 '@type' => 'Product',
                 'name' => $name,
-                'image' => get_schema_image_object($image_url),
+                'image' => wem_get_schema_image_object($image_url),
                 'description' => $description,
                 'review' => array(
                     '@type' => 'Review',
@@ -122,9 +127,13 @@ function generate_schema_from_blocks($content) {
     return $schemas;
 }
 
-function generate_schema() {
+function wem_generate_schema() {
     $org_id = 'https://witheachmile.com/#organization';
+    $website_id = 'https://witheachmile.com/#website';
     $logo_url = 'https://witheachmile.com/wp-content/uploads/2026/03/With-Each-Mile-Full-Size.webp';
+
+    $sfehling_user = get_user_by('slug', 'sfehling');
+    $mbarrios_user = get_user_by('slug', 'mbarrios');
 
     $org_schema = array(
         '@context' => 'https://schema.org',
@@ -132,27 +141,58 @@ function generate_schema() {
         '@id' => $org_id,
         'name' => 'With Each Mile',
         'url' => 'https://witheachmile.com/',
-        'logo' => get_schema_image_object($logo_url),
-        'sameAs' => get_social_profiles('default')
+        'description' => 'National Park guides and dog-friendly road trip tips that fit into real life.',
+        'foundingDate' => '2024-02-01',
+        'founder' => array(
+            array(
+                '@type' => 'Person',
+                '@id' => ($sfehling_user ? get_author_posts_url($sfehling_user->ID) : '') . '#person',
+                'name' => wem_get_canonical_author_name('sfehling'),
+                'alternateName' => $sfehling_user ? get_the_author_meta('display_name', $sfehling_user->ID) : '',
+                'sameAs' => wem_get_social_profiles('sfehling')
+            ),
+            array(
+                '@type' => 'Person',
+                '@id' => ($mbarrios_user ? get_author_posts_url($mbarrios_user->ID) : '') . '#person',
+                'name' => wem_get_canonical_author_name('mbarrios'),
+                'alternateName' => $mbarrios_user ? get_the_author_meta('display_name', $mbarrios_user->ID) : '',
+                'sameAs' => wem_get_social_profiles('mbarrios')
+            )
+        ),
+        'logo' => wem_get_schema_image_object($logo_url),
+        'sameAs' => wem_get_social_profiles('default')
     );
-    echo '<script type="application/ld+json">' . wp_json_encode($org_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+    echo '<script type="application/ld+json">' . wp_json_encode($org_schema, JSON_UNESCAPED_SLASHES) . '</script>';
 
     if (is_front_page() || is_home()) {
         $web_schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
-            '@id' => 'https://witheachmile.com/#website',
+            '@id' => $website_id,
             'name' => 'With Each Mile',
             'url' => 'https://witheachmile.com/',
-            'publisher' => array('@id' => $org_id)
+            'description' => 'National Park guides, dog-friendly road trips, and hiking itineraries from real trips.',
+            'inLanguage' => 'en-US',
+            'publisher' => array('@id' => $org_id),
+            'about' => array('@id' => $org_id),
+            'potentialAction' => array(
+                '@type' => 'SearchAction',
+                'target' => array(
+                    '@type' => 'EntryPoint',
+                    'urlTemplate' => 'https://witheachmile.com/?s={search_term_string}'
+                ),
+                'query-input' => 'required name=search_term_string'
+            )
         );
-        echo '<script type="application/ld+json">' . wp_json_encode($web_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        echo '<script type="application/ld+json">' . wp_json_encode($web_schema, JSON_UNESCAPED_SLASHES) . '</script>';
     }
 
     if (is_author()) {
         $author_id = get_queried_object_id();
         $author_slug = get_the_author_meta('user_nicename', $author_id);
         $author_url = get_author_posts_url($author_id);
+        $canonical_name = wem_get_canonical_author_name($author_slug);
+        $display_name = get_the_author_meta('display_name', $author_id);
 
         $author_page_schema = array(
             '@context' => 'https://schema.org',
@@ -160,15 +200,17 @@ function generate_schema() {
             'mainEntity' => array(
                 '@type' => 'Person',
                 '@id' => $author_url . '#person',
-                'name' => get_the_author_meta('display_name', $author_id),
+                'name' => !empty($canonical_name) ? $canonical_name : $display_name,
+                'alternateName' => $display_name,
                 'url' => $author_url,
                 'image' => get_avatar_url($author_id, ['size' => 500]),
                 'description' => get_the_author_meta('description', $author_id),
-                'sameAs' => get_social_profiles($author_slug),
+                'sameAs' => wem_get_social_profiles($author_slug),
                 'worksFor' => array('@id' => $org_id)
             )
         );
-        echo '<script type="application/ld+json">' . wp_json_encode($author_page_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        
+        echo '<script type="application/ld+json">' . wp_json_encode($author_page_schema, JSON_UNESCAPED_SLASHES) . '</script>';
     }
 
     if (is_single() && !is_page('our-gear')) {
@@ -177,26 +219,36 @@ function generate_schema() {
         $author_slug = get_the_author_meta('user_nicename', $author_id);
         $author_url = get_author_posts_url($author_id);
         $post_url = get_permalink();
+        $canonical_name = wem_get_canonical_author_name($author_slug);
+        $display_name = get_the_author_meta('display_name', $author_id);
 
         $blog_schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'BlogPosting',
             'headline' => get_the_title(),
             'url' => $post_url,
-            'inLanguage' => 'en',
+            'inLanguage' => 'en-US',
             'datePublished' => get_the_date('c'),
             'dateModified' => get_the_modified_date('c'),
             'author' => array(
                 '@type' => 'Person',
                 '@id' => $author_url . '#person',
-                'name' => get_the_author_meta('display_name', $author_id),
+                'name' => !empty($canonical_name) ? $canonical_name : $display_name,
+                'alternateName' => $display_name,
                 'url' => $author_url,
-                'sameAs' => get_social_profiles($author_slug),
+                'sameAs' => wem_get_social_profiles($author_slug),
                 'description' => get_the_author_meta('description', $author_id)
             ),
             'publisher' => array('@id' => $org_id),
+            'isPartOf' => array('@id' => $website_id),
             'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => $post_url, 'url' => $post_url),
-            'potentialAction' => array('@type' => 'ReadAction', 'target' => array('@type' => 'EntryPoint', 'url' => $post_url))
+            'potentialAction' => array(
+                '@type' => 'ReadAction', 
+                'target' => array(
+                    '@type' => 'EntryPoint', 
+                    'url' => $post_url
+                )
+            )
         );
 
         preg_match_all('/<script[^>]*type=[\'"]application\/ld\+json[\'"][^>]*>(.*?)<\/script>/is', $post->post_content, $scripts);
@@ -228,13 +280,13 @@ function generate_schema() {
 
         $image_objects = [];
         foreach ($all_images as $img_url) {
-            $obj = get_schema_image_object($img_url);
+            $obj = wem_get_schema_image_object($img_url);
             if ($obj) $image_objects[] = $obj;
         }
 
         if ($image_objects) $blog_schema['image'] = $image_objects;
 
-        echo '<script type="application/ld+json">' . wp_json_encode($blog_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        echo '<script type="application/ld+json">' . wp_json_encode($blog_schema, JSON_UNESCAPED_SLASHES) . '</script>';
     }
 
     if (is_page('about-us')) {
@@ -245,14 +297,26 @@ function generate_schema() {
             'url' => get_permalink(),
             'datePublished' => get_the_date('c'),
             'dateModified' => get_the_modified_date('c'),
-            'description' => 'Join Minerva & Sam as they travel the U.S. with their dogs...',
+            'description' => 'Join Minerva Barrios & Samuel Fehling as they travel the U.S. with their dogs...',
             'publisher' => array('@id' => $org_id),
             'creator' => array(
-                array('@type' => 'Person', 'name' => 'Sam', 'sameAs' => get_social_profiles('sfehling')),
-                array('@type' => 'Person', 'name' => 'Minerva', 'sameAs' => get_social_profiles('mbarrios'))
+                array(
+                    '@type' => 'Person', 
+                    'name' => wem_get_canonical_author_name('sfehling'), 
+                    'alternateName' => $sfehling_user ? get_the_author_meta('display_name', $sfehling_user->ID) : '',
+                    '@id' => ($sfehling_user ? get_author_posts_url($sfehling_user->ID) : '') . '#person', 
+                    'sameAs' => wem_get_social_profiles('sfehling')
+                ),
+                array(
+                    '@type' => 'Person', 
+                    'name' => wem_get_canonical_author_name('mbarrios'), 
+                    'alternateName' => $mbarrios_user ? get_the_author_meta('display_name', $mbarrios_user->ID) : '',
+                    '@id' => ($mbarrios_user ? get_author_posts_url($mbarrios_user->ID) : '') . '#person', 
+                    'sameAs' => wem_get_social_profiles('mbarrios')
+                )
             )
         );
-        echo '<script type="application/ld+json">' . wp_json_encode($about_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        echo '<script type="application/ld+json">' . wp_json_encode($about_schema, JSON_UNESCAPED_SLASHES) . '</script>';
     }
 
     if (is_page('our-gear')) {
@@ -266,11 +330,11 @@ function generate_schema() {
             'datePublished' => get_the_date('c'),
             'dateModified' => get_the_modified_date('c')
         );
-        echo '<script type="application/ld+json">' . wp_json_encode($gear_page_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        echo '<script type="application/ld+json">' . wp_json_encode($gear_page_schema, JSON_UNESCAPED_SLASHES) . '</script>';
 
-        foreach (generate_schema_from_blocks($post->post_content) as $product) {
-            echo '<script type="application/ld+json">' . wp_json_encode($product, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        foreach (wem_generate_schema_from_blocks($post->post_content) as $product) {
+            echo '<script type="application/ld+json">' . wp_json_encode($product, JSON_UNESCAPED_SLASHES) . '</script>';
         }
     }
 }
-add_action('wp_head', 'generate_schema');
+add_action('wp_head', 'wem_generate_schema');
