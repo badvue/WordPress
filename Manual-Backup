@@ -1,1 +1,4 @@
 sudo tar -cvzf -Backup-XXXXXXX.tar.gz /Desktop/
+
+* Restore *
+sudo tar -xzvf XXXXXX.tar.gz -C /
